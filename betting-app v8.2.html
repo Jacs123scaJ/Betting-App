@@ -1,0 +1,2489 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>Jac's Bet Tracker</title>
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="Jac's Bets">
+<meta name="application-name" content="Jac's Bets">
+<meta name="theme-color" content="#2563eb">
+<link rel="apple-touch-icon" href="icon.png">
+<link rel="manifest" href="manifest.json">
+<link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Bebas+Neue&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #f4f6f9;
+    --surface: #ffffff;
+    --surface2: #f0f2f5;
+    --border: #dde1e9;
+    --accent: #2563eb;
+    --accent2: #e05a1e;
+    --accent3: #7c3aed;
+    --text: #1a1a2e;
+    --muted: #7a7a90;
+    --green: #1a7f5a;
+    --red: #d63031;
+    --yellow: #e0a000;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'DM Sans', sans-serif;
+    min-height: 100vh;
+    padding-bottom: 40px;
+  }
+
+  /* AUTH SCREEN */
+  #auth-screen {
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    min-height: 100vh; padding: 24px; text-align: center;
+  }
+  #auth-screen h1 { font-family: 'Bebas Neue', sans-serif; font-size: 52px; letter-spacing: 4px; color: var(--accent); margin-bottom: 8px; }
+  #auth-screen p { color: var(--muted); font-size: 14px; margin-bottom: 32px; }
+  .auth-btn {
+    background: var(--accent); color: #fff; border: none; padding: 14px 32px;
+    font-family: 'DM Sans', sans-serif; font-weight: 600; font-size: 16px;
+    border-radius: 8px; cursor: pointer; width: 100%; max-width: 320px;
+    transition: opacity 0.2s;
+  }
+  .auth-btn:hover { opacity: 0.85; }
+
+  /* HEADER */
+  /* UPCOMING BUTTON */
+  .upcoming-btn {
+    display: flex; align-items: center; gap: 5px;
+    padding: 5px 12px; border-radius: 20px; border: 1.5px solid var(--accent);
+    background: rgba(37,99,235,0.08); color: var(--accent);
+    font-family: 'DM Sans', sans-serif; font-size: 12px; font-weight: 700;
+    cursor: pointer; letter-spacing: 0.5px; transition: all 0.15s;
+  }
+  .upcoming-btn:hover  { background: rgba(37,99,235,0.15); }
+  .upcoming-btn.active { background: var(--accent); color: #fff; }
+  .upcoming-overlay-title {
+    font-family: 'Bebas Neue', sans-serif; font-size: 22px;
+    letter-spacing: 3px; color: var(--accent);
+  }
+
+  /* LIVE BUTTON */
+  .live-btn {
+    display: flex; align-items: center; gap: 5px;
+    padding: 5px 12px; border-radius: 20px; border: 1.5px solid var(--green);
+    background: rgba(26,127,90,0.08); color: var(--green);
+    font-family: 'DM Sans', sans-serif; font-size: 12px; font-weight: 700;
+    cursor: pointer; letter-spacing: 0.5px; transition: all 0.15s;
+  }
+  .live-btn:hover { background: rgba(26,127,90,0.15); }
+  .live-btn.active { background: var(--green); color: #fff; }
+  .live-btn.active .live-btn-dot { animation: pulse 1.5s infinite; }
+  .live-btn-dot { font-size: 10px; }
+
+  /* LIVE OVERLAY */
+  .live-overlay {
+    position: fixed; inset: 0; z-index: 200;
+    display: flex; flex-direction: column;
+    animation: slideUp 0.2s ease;
+  }
+  #live-overlay     { background: #f0faf4; }
+  #upcoming-overlay { background: #f5f0ff; }
+  @keyframes slideUp {
+    from { transform: translateY(100%); opacity: 0; }
+    to   { transform: translateY(0);    opacity: 1; }
+  }
+  .live-overlay-header {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 18px 20px;
+    border-bottom: 1px solid var(--border);
+    position: sticky; top: 0;
+  }
+  #live-overlay     .live-overlay-header { background: rgba(220,245,230,0.95); }
+  #upcoming-overlay .live-overlay-header { background: rgba(237,230,255,0.95); }
+  .live-overlay-title {
+    font-family: 'Bebas Neue', sans-serif; font-size: 22px;
+    letter-spacing: 3px; color: var(--green);
+    animation: pulse 1.5s infinite;
+  }
+  .live-close-btn {
+    width: 32px; height: 32px; border-radius: 50%; border: none;
+    background: rgba(0,0,0,0.08); color: var(--text); font-size: 14px;
+    cursor: pointer; display: flex; align-items: center; justify-content: center;
+  }
+  .live-content { flex: 1; overflow-y: auto; padding: 16px 20px; }
+  .live-empty { text-align: center; padding: 60px 20px; color: var(--muted); font-size: 14px; }
+  .live-empty .icon { font-size: 40px; margin-bottom: 12px; }
+
+  /* LIVE CARDS — green border for live, neutral for upcoming */
+  /* LIVE SCORE BADGE */
+  .live-score-badge { flex-shrink: 0; text-align: center; min-width: 60px; }
+  .score-loading { font-size: 10px; color: var(--muted); animation: pulse 1.5s infinite; }
+  .score-live, .score-ft { display: flex; flex-direction: column; align-items: center; gap: 1px; }
+  .score-value  { font-family: 'Bebas Neue', sans-serif; font-size: 20px; letter-spacing: 1px; color: var(--text); line-height: 1; }
+  .score-minute { font-size: 9px; font-weight: 700; color: var(--green); letter-spacing: 1px; animation: pulse 2s infinite; }
+  .score-ft-label { font-size: 9px; font-weight: 700; color: var(--muted); letter-spacing: 1px; }
+
+  .live-card {
+    background: #ffffff; border-radius: 12px;
+    border: 1.5px solid var(--border);
+    margin-bottom: 12px; overflow: hidden;
+  }
+  /* Live overlay cards get the green border */
+  #live-overlay .live-card {
+    border: 2px solid var(--green);
+    box-shadow: 0 0 0 3px rgba(26,127,90,0.1);
+  }
+  /* Result overrides apply everywhere */
+  .live-card.result-win  { border-color: var(--green) !important; background: rgba(26,127,90,0.04); box-shadow: none !important; }
+  .live-card.result-loss { border-color: var(--red)   !important; background: rgba(214,48,49,0.04); box-shadow: none !important; }
+  .live-card.result-nm   { border-color: #e07b00      !important; background: rgba(224,123,0,0.08); box-shadow: none !important; }
+  /* Upcoming placed badge gets green border */
+  #upcoming-overlay .live-card.bet-placed { border-color: var(--green) !important; box-shadow: 0 0 0 3px rgba(26,127,90,0.1) !important; }
+  .live-card-header { display: flex; align-items: center; gap: 12px; padding: 12px 14px; }
+  .live-card-kickoff {
+    background: var(--green); color: #fff; font-family: 'Bebas Neue', sans-serif;
+    font-size: 18px; letter-spacing: 1px; padding: 6px 10px;
+    border-radius: 8px; flex-shrink: 0; min-width: 52px; text-align: center;
+  }
+  .live-card.result-win  .live-card-kickoff { background: var(--green); }
+  .live-card.result-loss .live-card-kickoff { background: var(--red); }
+  .live-card.result-nm   .live-card-kickoff { background: #e07b00; }
+  .live-card-info  { flex: 1; min-width: 0; }
+  .live-card-teams { font-weight: 600; font-size: 14px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .live-card-meta  { font-size: 11px; color: var(--muted); margin-top: 2px; }
+  .live-card-outcomes { padding: 0 14px 14px; display: flex; flex-direction: column; gap: 8px; }
+  .live-outcome-row { display: flex; align-items: center; gap: 8px; }
+  .live-outcome-label { font-size: 11px; font-weight: 600; color: var(--muted); min-width: 70px; flex-shrink: 0; }
+
+  header {
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    padding: 16px 20px;
+    display: flex; align-items: center; justify-content: space-between;
+    position: sticky; top: 0; z-index: 100;
+  }
+  header h1 { font-family: 'Bebas Neue', sans-serif; font-size: 28px; letter-spacing: 3px; color: var(--accent); }
+  .date-pill {
+    font-family: 'DM Mono', monospace; font-size: 11px; color: var(--muted);
+    background: var(--surface2); border: 1px solid var(--border);
+    padding: 4px 10px; border-radius: 20px;
+  }
+
+  /* TABS */
+  .tabs {
+    display: flex; overflow-x: auto; padding: 12px 20px 0;
+    gap: 8px; border-bottom: 1px solid var(--border);
+    scrollbar-width: none;
+  }
+  .tabs::-webkit-scrollbar { display: none; }
+  .tab {
+    flex-shrink: 0; padding: 8px 16px; border-radius: 8px 8px 0 0;
+    font-size: 13px; font-weight: 500; cursor: pointer; border: none;
+    background: transparent; color: var(--muted);
+    border-bottom: 2px solid transparent;
+    transition: all 0.2s;
+  }
+  .tab.active { color: var(--accent); border-bottom-color: var(--accent); background: var(--surface); }
+
+  /* MAIN */
+  main { padding: 16px 20px; }
+
+  .loading {
+    text-align: center; padding: 60px 20px; color: var(--muted);
+    font-size: 14px;
+  }
+  .loading .spinner {
+    width: 32px; height: 32px; border: 2px solid var(--border);
+    border-top-color: var(--accent); border-radius: 50%;
+    animation: spin 0.8s linear infinite; margin: 0 auto 16px;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  .empty-state {
+    text-align: center; padding: 60px 20px;
+    color: var(--muted); font-size: 14px;
+  }
+  .empty-state .icon { font-size: 40px; margin-bottom: 12px; }
+
+  /* MATCH CARD */
+  .match-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    margin-bottom: 12px;
+    overflow: hidden;
+    transition: border-color 0.2s;
+  }
+  .match-card:hover { border-color: var(--accent); }
+
+  .match-header {
+    padding: 14px 16px;
+    cursor: pointer;
+    display: flex; align-items: center; justify-content: space-between;
+    gap: 12px;
+  }
+  .match-kickoff {
+    flex-shrink: 0;
+    background: var(--accent);
+    color: #fff;
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 22px;
+    letter-spacing: 1px;
+    padding: 6px 10px;
+    border-radius: 8px;
+    line-height: 1;
+    min-width: 58px;
+    text-align: center;
+  }
+  .match-info { flex: 1; min-width: 0; }
+  .match-teams {
+    font-weight: 600; font-size: 15px; color: var(--text);
+    margin-bottom: 4px;
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  }
+  .match-meta {
+    display: flex; gap: 8px; align-items: center;
+  }
+  .meta-pill {
+    font-family: 'DM Mono', monospace; font-size: 10px;
+    padding: 2px 7px; border-radius: 4px; background: var(--surface2);
+    color: var(--muted);
+  }
+  .match-chevron {
+    color: var(--muted); font-size: 18px; transition: transform 0.2s;
+    flex-shrink: 0;
+  }
+  .match-card.open .match-chevron { transform: rotate(180deg); }
+
+  /* INLINE BET ROW */
+  .inline-bet-row {
+    display: flex; align-items: center; gap: 8px;
+  }
+  .inline-label {
+    flex: 1; font-size: 12px; font-weight: 500; color: var(--text);
+    min-width: 0;
+  }
+  .inline-input {
+    width: 70px !important; flex-shrink: 0;
+    font-size: 12px; padding: 5px 8px;
+  }
+  .inline-save-btn {
+    flex-shrink: 0; padding: 5px 12px; border: none; border-radius: 6px;
+    background: var(--accent); color: #fff; font-weight: 600;
+    font-size: 12px; cursor: pointer; font-family: 'DM Sans', sans-serif;
+    transition: opacity 0.2s; white-space: nowrap;
+  }
+  .inline-save-btn:hover { opacity: 0.85; }
+  .saved-inline {
+    color: var(--green); font-size: 13px; font-weight: 700;
+    display: none; flex-shrink: 0;
+  }
+
+  /* COMPACT BET BLOCK */
+  .bet-block { padding: 8px 12px; margin-bottom: 6px; }
+
+  /* OUTCOME TOGGLES */
+  .outcome-toggle-row {
+    display: flex; gap: 6px; margin-top: 8px;
+  }
+  .outcome-toggle {
+    flex: 1; padding: 6px 4px; border-radius: 6px; border: 1.5px solid var(--border);
+    font-size: 12px; font-weight: 600; cursor: pointer; background: var(--bg);
+    font-family: 'DM Sans', sans-serif; color: var(--muted); transition: all 0.15s;
+  }
+  .outcome-toggle.win.active  { background: rgba(26,127,90,0.12); border-color: var(--green); color: var(--green); }
+  .outcome-toggle.loss.active { background: rgba(214,48,49,0.12); border-color: var(--red);   color: var(--red); }
+  .outcome-toggle.void.active { background: rgba(122,122,144,0.12); border-color: var(--muted); color: var(--muted); }
+  .outcome-toggle.win:hover   { border-color: var(--green); color: var(--green); }
+  .outcome-toggle.loss:hover  { border-color: var(--red);   color: var(--red); }
+  .outcome-toggle.void:hover  { border-color: var(--muted); }
+
+  /* CARD WIN/LOSS COLOURING */
+  .match-card.result-win  { border-color: var(--green); background: rgba(26,127,90,0.1); }
+  .match-card.result-loss { border-color: var(--red);   background: rgba(214,48,49,0.1); }
+  .match-card.result-nm   { border-color: #e07b00;      background: rgba(224,123,0,0.08); }
+  .match-card.result-win  .match-kickoff { background: var(--green); }
+  .match-card.result-loss .match-kickoff { background: var(--red); }
+  .match-card.result-nm   .match-kickoff { background: #e07b00; }
+  .match-card.bet-placed  { border: 2.5px solid var(--green); box-shadow: 0 0 0 3px rgba(26,127,90,0.1); }
+
+  /* LIVE BADGE */
+  .placed-badge {
+    flex-shrink: 0; font-size: 11px; font-weight: 700;
+    color: var(--green); letter-spacing: 0.5px;
+    animation: pulse 2s infinite;
+  }
+  @keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.4; }
+  }
+
+  .bet-sections { padding: 0 16px 16px; display: none; }
+  .match-card.open .bet-sections { display: block; }
+
+  .divider { height: 1px; background: var(--border); margin: 0 0 14px; }
+
+  .bet-block {
+    background: #ffffff;
+    border: 1px solid #d0d5e0;
+    border-radius: 8px;
+    padding: 8px 12px;
+    margin-bottom: 6px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.06);
+  }
+  .bet-block-title {
+    font-size: 11px; font-weight: 600; text-transform: uppercase;
+    letter-spacing: 1px; color: var(--muted); margin-bottom: 10px;
+  }
+
+  /* ODDS CHECK */
+  .odds-check-row {
+    display: flex; align-items: center; gap: 10px; margin-bottom: 8px;
+  }
+  .odds-label { font-size: 12px; color: var(--muted); flex: 1; }
+  .odds-value {
+    font-family: 'DM Mono', monospace; font-size: 13px;
+    color: var(--text); background: #ffffff;
+    border: 1px solid #d0d5e0; padding: 4px 10px;
+    border-radius: 6px; min-width: 52px; text-align: center;
+    box-shadow: inset 0 1px 2px rgba(0,0,0,0.04);
+  }
+  .odds-input {
+    font-family: 'DM Mono', monospace; font-size: 13px;
+    background: var(--bg); border: 1px solid var(--border);
+    color: var(--text); padding: 5px 10px; border-radius: 6px;
+    width: 70px; text-align: center; outline: none;
+    transition: border-color 0.2s;
+  }
+  .odds-input:focus { border-color: var(--accent); }
+  .viability-badge {
+    font-size: 10px; font-weight: 600; padding: 3px 8px;
+    border-radius: 4px; font-family: 'DM Mono', monospace;
+    white-space: nowrap;
+  }
+  .viability-badge.good { background: rgba(0,229,160,0.15); color: var(--green); }
+  .viability-badge.bad { background: rgba(255,71,87,0.15); color: var(--red); }
+  .viability-badge.unknown { background: var(--surface); color: var(--muted); }
+
+  /* LOG BET FORM */
+  .log-form { margin-top: 10px; }
+  .log-row {
+    display: flex; gap: 8px; margin-bottom: 8px; align-items: center;
+  }
+  .log-label { font-size: 11px; color: var(--muted); width: 60px; flex-shrink: 0; }
+  .log-input {
+    flex: 1; font-family: 'DM Mono', monospace; font-size: 12px;
+    background: #ffffff; border: 1px solid #d0d5e0;
+    color: var(--text); padding: 5px 10px; border-radius: 6px;
+    outline: none; transition: border-color 0.2s;
+    box-shadow: inset 0 1px 2px rgba(0,0,0,0.04);
+  }
+  .log-input:focus { border-color: var(--accent); }
+  .outcome-select {
+    flex: 1; font-family: 'DM Sans', sans-serif; font-size: 12px;
+    background: var(--bg); border: 1px solid var(--border);
+    color: var(--text); padding: 5px 10px; border-radius: 6px;
+    outline: none;
+  }
+  .save-btn {
+    width: 100%; padding: 9px; border: none; border-radius: 6px;
+    background: var(--accent); color: #fff; font-weight: 600;
+    font-size: 13px; cursor: pointer; margin-top: 4px;
+    font-family: 'DM Sans', sans-serif; transition: opacity 0.2s;
+  }
+  .save-btn:hover { opacity: 0.85; }
+  .save-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+  .saved-badge {
+    text-align: center; font-size: 11px; color: var(--green);
+    font-family: 'DM Mono', monospace; margin-top: 6px;
+    display: none;
+  }
+
+  /* P&L DISPLAY */
+  .pl-row {
+    display: flex; justify-content: space-between; align-items: center;
+    font-family: 'DM Mono', monospace; font-size: 11px;
+    color: var(--muted); margin-top: 6px;
+  }
+  .pl-val { font-size: 12px; }
+  .pl-val.pos { color: var(--green); }
+  .pl-val.neg { color: var(--red); }
+
+  /* DIPPING STRATEGY */
+  .dip-minutes { display: flex; gap: 8px; margin-bottom: 10px; }
+  .dip-minute-block {
+    flex: 1; background: var(--bg); border: 1px solid var(--border);
+    border-radius: 6px; padding: 8px; text-align: center;
+  }
+  .dip-minute-label { font-size: 10px; color: var(--muted); margin-bottom: 4px; }
+  .dip-minute-input {
+    width: 100%; font-family: 'DM Mono', monospace; font-size: 12px;
+    background: transparent; border: none; color: var(--text);
+    text-align: center; outline: none;
+  }
+
+  /* SUMMARY BAR */
+  .summary-bar {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: 10px; padding: 12px 16px;
+    display: flex; gap: 16px; margin-bottom: 16px;
+    overflow-x: auto; scrollbar-width: none;
+  }
+  .summary-bar::-webkit-scrollbar { display: none; }
+  .summary-item { flex-shrink: 0; text-align: center; }
+  .summary-item .label { font-size: 10px; color: var(--muted); margin-bottom: 2px; }
+  .summary-item .value {
+    font-family: 'DM Mono', monospace; font-size: 14px; font-weight: 500;
+  }
+  .summary-item .value.pos { color: var(--green); }
+  .summary-item .value.neg { color: var(--red); }
+
+  /* REFRESH BTN */
+  .refresh-btn {
+    background: transparent; border: 1px solid var(--border);
+    color: var(--muted); padding: 6px 12px; border-radius: 6px;
+    font-size: 12px; cursor: pointer; font-family: 'DM Sans', sans-serif;
+    transition: all 0.2s;
+  }
+  .refresh-btn:hover { border-color: var(--accent); color: var(--accent); }
+
+  /* OVERALL P&L */
+  .overall-pl {
+    font-family: 'DM Mono', monospace; font-size: 13px; font-weight: 700;
+    letter-spacing: 1px;
+  }
+  .overall-pl.pos { color: var(--green); }
+  .overall-pl.neg { color: var(--red); }
+  .overall-pl.zero { color: var(--muted); }
+
+  /* FLASHSCORE BUTTON */
+  .flashscore-btn {
+    flex-shrink: 0; width: 28px; height: 28px; border-radius: 50%;
+    background: rgba(255,140,0,0.12); border: 1.5px solid rgba(255,140,0,0.4);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 14px; text-decoration: none; transition: all 0.15s;
+  }
+  .flashscore-btn:hover { background: rgba(255,140,0,0.25); border-color: rgba(255,140,0,0.8); }
+
+  .quick-odds-tab { color: var(--accent) !important; font-weight: 600 !important; }
+  .quick-odds-tab.active { border-bottom-color: var(--accent) !important; }
+
+  #quick-odds-overlay { background: #f0f4ff; }
+  #quick-odds-overlay .live-overlay-header { background: rgba(230,235,255,0.95); }
+
+  .qo-game {
+    background: #fff; border-radius: 10px; border: 1px solid var(--border);
+    margin-bottom: 12px; overflow: hidden;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.06);
+  }
+  .qo-game-header {
+    display: flex; align-items: center; gap: 10px;
+    padding: 10px 14px; border-bottom: 1px solid var(--border);
+    background: var(--surface2);
+  }
+  .qo-time {
+    font-family: 'Bebas Neue', sans-serif; font-size: 16px;
+    color: var(--accent); flex-shrink: 0; min-width: 48px;
+  }
+  .qo-teams { font-weight: 600; font-size: 13px; flex: 1; }
+  .qo-comp  { font-size: 11px; color: var(--muted); }
+  .qo-rows  { padding: 8px 14px; display: flex; flex-direction: column; gap: 6px; }
+  .qo-row   { display: flex; align-items: center; gap: 8px; }
+  .qo-label { font-size: 11px; color: var(--muted); font-weight: 500; flex: 1; }
+  .qo-input {
+    width: 80px; font-family: 'DM Mono', monospace; font-size: 12px;
+    background: #fff; border: 1px solid #d0d5e0; color: var(--text);
+    padding: 5px 8px; border-radius: 6px; outline: none;
+    box-shadow: inset 0 1px 2px rgba(0,0,0,0.04);
+  }
+  .qo-input:focus { border-color: var(--accent); }
+  .qo-save {
+    padding: 5px 14px; border: none; border-radius: 6px;
+    background: var(--accent); color: #fff; font-weight: 600;
+    font-size: 12px; cursor: pointer; font-family: 'DM Sans', sans-serif;
+    transition: opacity 0.2s; white-space: nowrap; flex-shrink: 0;
+  }
+  .qo-save:hover { opacity: 0.85; }
+  .qo-tick { color: var(--green); font-size: 13px; font-weight: 700; display: none; flex-shrink: 0; }
+
+  /* OUTCOMES TAB */
+  .outcomes-tab { color: var(--accent) !important; font-weight: 600 !important; }
+  .outcomes-badge {
+    background: var(--red); color: #fff;
+    font-size: 9px; font-weight: 700; font-family: 'DM Sans', sans-serif;
+    min-width: 16px; height: 16px; padding: 0 4px;
+    border-radius: 8px; display: inline-flex;
+    align-items: center; justify-content: center;
+    vertical-align: middle;
+  }
+  #outcomes-overlay { background: #fff8f0; }
+  #outcomes-overlay .live-overlay-header { background: rgba(255,240,220,0.95); }
+  .oc-card { background: #fff; border-radius: 10px; border: 1px solid var(--border); margin-bottom: 12px; overflow: hidden; box-shadow: 0 1px 3px rgba(0,0,0,0.06); }
+  .oc-card.oc-win  { border-left: 4px solid var(--green); }
+  .oc-card.oc-lose { border-left: 4px solid var(--red); }
+  .oc-header { padding: 10px 14px; background: var(--surface2); border-bottom: 1px solid var(--border); }
+  .oc-teams  { font-weight: 600; font-size: 13px; }
+  .oc-meta   { font-size: 11px; color: var(--muted); margin-top: 2px; }
+  .oc-body   { padding: 10px 14px; display: flex; flex-direction: column; gap: 8px; }
+  .oc-row    { display: flex; align-items: center; gap: 8px; }
+  .oc-label  { font-size: 11px; font-weight: 600; color: var(--muted); min-width: 90px; flex-shrink: 0; }
+  .oc-outcome { font-size: 11px; font-weight: 700; padding: 3px 8px; border-radius: 4px; flex-shrink: 0; }
+  .oc-outcome.win  { background: rgba(26,127,90,0.1);  color: var(--green); }
+  .oc-outcome.lose { background: rgba(214,48,49,0.1); color: var(--red); }
+  .oc-pl-input { width: 80px; font-family: 'DM Mono', monospace; font-size: 12px; background: #fff; border: 1px solid #d0d5e0; color: var(--text); padding: 5px 8px; border-radius: 6px; outline: none; box-shadow: inset 0 1px 2px rgba(0,0,0,0.04); }
+  .oc-pl-input:focus { border-color: var(--accent); }
+  .oc-save { padding: 5px 14px; border: none; border-radius: 6px; background: var(--accent); color: #fff; font-weight: 600; font-size: 12px; cursor: pointer; font-family: 'DM Sans', sans-serif; flex-shrink: 0; }
+  .oc-save:hover { opacity: 0.85; }
+
+  /* NO BET BUTTON */
+  .no-bet-btn {
+    width: 100%; padding: 8px; border-radius: 6px; margin-top: 10px;
+    border: 1.5px solid var(--red); background: rgba(214,48,49,0.06);
+    color: var(--red); font-family: 'DM Sans', sans-serif;
+    font-size: 12px; font-weight: 700; cursor: pointer;
+    letter-spacing: 0.5px; transition: all 0.15s;
+  }
+  .no-bet-btn:hover { background: rgba(214,48,49,0.15); }
+
+  /* PAST DIVIDER */
+  .past-divider {
+    display: flex; align-items: center; gap: 10px; margin: 16px 0 12px;
+  }
+  .past-divider-line { flex: 1; height: 2px; background: var(--text); opacity: 0.15; }
+  .past-divider-label {
+    font-size: 10px; font-weight: 700; letter-spacing: 1.5px;
+    text-transform: uppercase; color: var(--muted); white-space: nowrap;
+  }
+
+  /* TOAST */
+  .toast {
+    position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%);
+    background: var(--surface2); border: 1px solid var(--accent);
+    color: var(--accent); padding: 10px 20px; border-radius: 8px;
+    font-size: 13px; font-family: 'DM Mono', monospace;
+    opacity: 0; transition: opacity 0.3s; pointer-events: none; z-index: 999;
+    white-space: nowrap;
+  }
+  .toast.show { opacity: 1; }
+  .toast.error { border-color: var(--red); color: var(--red); }
+</style>
+</head>
+<body>
+
+<!-- AUTH SCREEN -->
+<div id="auth-screen">
+  <h1>JAC'S BET TRACKER</h1>
+  <p>Sign in with Google to access your betting sheets</p>
+  <button class="auth-btn" onclick="signIn()">Sign in with Google</button>
+</div>
+
+<!-- APP -->
+<div id="app" style="display:none">
+  <header>
+    <div style="display:flex;flex-direction:column;gap:4px">
+      <h1>JAC'S BET TRACKER</h1>
+      <div style="display:flex;gap:12px;align-items:center">
+        <div>
+          <div style="font-size:9px;font-weight:700;letter-spacing:1px;color:var(--muted);text-transform:uppercase">Overall</div>
+          <div class="overall-pl" id="overall-pl"></div>
+        </div>
+        <div style="width:1px;height:28px;background:var(--border)"></div>
+        <div>
+          <div style="font-size:9px;font-weight:700;letter-spacing:1px;color:var(--muted);text-transform:uppercase">Today</div>
+          <div class="overall-pl" id="today-pl">—</div>
+        </div>
+      </div>
+    </div>
+    <div style="display:flex;gap:8px;align-items:center">
+      <button class="upcoming-btn" id="upcoming-btn" onclick="toggleUpcomingView()">⏱ Upcoming</button>
+      <button class="live-btn" id="live-btn" onclick="toggleLiveView()">
+        <span class="live-btn-dot">●</span> Live
+      </button>
+      <button class="refresh-btn" onclick="loadAllSheets()">↻ Refresh</button>
+    </div>
+  </header>
+
+  <div class="tabs" id="tabs">
+    <button class="tab active" onclick="switchTab(0)" id="tab-0">SS Gambling</button>
+    <button class="tab" onclick="switchTab(1)" id="tab-1">HW Gambling</button>
+    <button class="tab" onclick="switchTab(2)" id="tab-2">3D Gambling</button>
+    <button class="tab outcomes-tab" id="outcomes-tab" onclick="switchToOutcomes()">
+      <span style="position:relative;display:inline-flex;align-items:center;gap:5px">
+        💰 Outcomes
+        <span class="outcomes-badge" id="outcomes-badge" style="display:none"></span>
+      </span>
+    </button>
+    <button class="tab" id="cleanup-tab" onclick="switchToCleanup()" style="color:#e07b00;font-weight:600">🗑 Cleanup</button>
+  </div>
+
+  <main id="main-content">
+    <div class="loading"><div class="spinner"></div>Loading today's bets...</div>
+  </main>
+
+  <!-- LIVE OVERLAY -->
+  <div id="live-overlay" class="live-overlay" style="display:none">
+    <div class="live-overlay-header">
+      <span class="live-overlay-title">● LIVE BETS</span>
+      <button class="live-close-btn" onclick="toggleLiveView()">✕</button>
+    </div>
+    <div id="live-content" class="live-content"></div>
+  </div>
+
+  <!-- UPCOMING OVERLAY -->
+  <div id="upcoming-overlay" class="live-overlay" style="display:none">
+    <div class="live-overlay-header">
+      <span class="upcoming-overlay-title">⏱ UPCOMING</span>
+      <button class="live-close-btn" onclick="toggleUpcomingView()">✕</button>
+    </div>
+    <div id="upcoming-content" class="live-content"></div>
+  </div>
+
+  <!-- OUTCOMES OVERLAY -->
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+// ── CONFIG ──────────────────────────────────────────────────────────────────
+const SPREADSHEET_ID = '1qE2V6BN_9925zMPjxc8aGQu15eBuS8lHR3QWP7UvMYw';
+const CLIENT_ID      = '825652656668-4mu1r7k3ggraq0tenserhb5lm33mm707.apps.googleusercontent.com';
+const SCOPES         = 'https://www.googleapis.com/auth/spreadsheets';
+
+const SHEETS = [
+  {
+    name: 'SS Gambling',
+    headerRow: 9,
+    placedCols: [11, 16],
+    noBetCols: [1, 2, 3, 4, 5, 6, 7],
+    grouped: true,
+    bets: [
+      { key: 'btts7',  label: 'BTTS Yes (7am)',   colOdds: 7,  type: 'display' },
+      { key: 'btts5',  label: 'BTTS Yes (5 Min)', colOdds: 8,  type: 'oddsonly', viability: 'btts5' },
+      { key: 'o25',    label: 'Over 2.5 Goals',   colOdds: 9,  type: 'oddsonly', viability: 'o25' },
+      { key: 'fhg',    label: 'FHG O0.5',         fixedOdds: 1.6, colOdds: 10, colStake: 11, colOutcome: 12, colPL: 13, type: 'stakeonly' },
+      { key: 'o15',    label: 'Over 1.5',          fixedOdds: 1.5, colOdds: 15, colStake: 16, colOutcome: 17, colPL: 18, type: 'stakeonly' },
+    ]
+  },
+  {
+    name: 'HW Gambling',
+    headerRow: 9,
+    placedCols: [9],
+    noBetCols: [1, 2, 3, 4, 5, 6, 7, 8],
+    bets: [
+      { key: 'hw7am',  label: 'Home Back (7am)',   colOdds: 7, type: 'display' },
+      { key: 'hw5min', label: 'Home Back (5 Min)',  colOdds: 8, colStake: 9, colOutcome: 10, colPL: 11, type: 'oddsstake', viability: 'hw5min' },
+    ]
+  },
+  {
+    name: '3D Gambling',
+    headerRow: 9,
+    placedCols: [8, 13],
+    noBetCols: [1, 2, 3, 4, 5, 6, 7, 8],
+    bets: [
+      { key: 'o25_7am', label: 'Over 2.5 (7am)',   colOdds: 7, type: 'display' },
+      { key: 'o25_5m',  label: 'Over 2.5 (5 Min)', colOdds: 8, type: 'oddsonly', viability: 'o25_5m' },
+      { key: 'dip',     label: 'Dipping Strategy',
+        col20: 9, col27: 10, col35: 11,
+        colAveOdds: 12, colStake: 13, colBackOutcome: 14, colPL: 21,
+        colLayOdds: 16, colLiability: 17, colLayBet: 18, colLayOutcome: 19, colLayPL: 20,
+        type: 'dip' }
+    ]
+  }
+];
+
+// ── STATE ───────────────────────────────────────────────────────────────────
+let tokenClient, accessToken;
+let sheetsData = [[], [], []];
+let currentTab = 0;
+let rowMap = [{}, {}, {}]; // sheetIndex -> rowKey -> rowIndex (1-based in sheet)
+
+// ── AUTH ─────────────────────────────────────────────────────────────────────
+function loadGapi() {
+  return new Promise(res => {
+    const s = document.createElement('script');
+    s.src = 'https://apis.google.com/js/api.js';
+    s.onload = () => gapi.load('client', async () => {
+      await gapi.client.init({ discoveryDocs: ['https://sheets.googleapis.com/$discovery/rest?version=v4'] });
+      res();
+    });
+    document.head.appendChild(s);
+  });
+}
+
+function loadGis() {
+  return new Promise(res => {
+    const s = document.createElement('script');
+    s.src = 'https://accounts.google.com/gsi/client';
+    s.onload = res;
+    document.head.appendChild(s);
+  });
+}
+
+async function init() {
+  await Promise.all([loadGapi(), loadGis()]);
+  tokenClient = google.accounts.oauth2.initTokenClient({
+    client_id: CLIENT_ID,
+    scope: SCOPES,
+    callback: async (resp) => {
+      if (resp.error) { showToast('Auth error: ' + resp.error, true); return; }
+      accessToken = resp.access_token;
+      const expiry = Date.now() + (resp.expires_in || 3600) * 1000;
+      sessionStorage.setItem('gtoken', accessToken);
+      sessionStorage.setItem('gtoken_expiry', expiry);
+      gapi.client.setToken({ access_token: accessToken });
+      // Inline — same as original working version, no wrapper function
+      document.getElementById('auth-screen').style.display = 'none';
+      document.getElementById('app').style.display = 'block';
+      setTodayDate();
+      await loadAllSheets();
+    }
+  });
+
+  // Restore valid session token silently
+  const savedToken = sessionStorage.getItem('gtoken');
+  const savedExpiry = parseInt(sessionStorage.getItem('gtoken_expiry') || '0');
+  if (savedToken && Date.now() < savedExpiry - 60000) {
+    accessToken = savedToken;
+    gapi.client.setToken({ access_token: accessToken });
+    document.getElementById('auth-screen').style.display = 'none';
+    document.getElementById('app').style.display = 'block';
+    setTodayDate();
+    await loadAllSheets();
+  } else if (savedToken) {
+    tokenClient.requestAccessToken({ prompt: '' });
+  }
+}
+
+function signIn() {
+  document.querySelector('.auth-btn').textContent = 'Signing in...';
+  tokenClient.requestAccessToken({ prompt: '' });
+}
+
+// ── DATE ─────────────────────────────────────────────────────────────────────
+function todayStr() {
+  const d = new Date();
+  return `${d.getDate()}/${d.getMonth()+1}/${d.getFullYear()}`;
+}
+function leagueFlag(comp) {
+  if (!comp) return '';
+  const c = comp.toLowerCase();
+  // European competitions
+  if (c.includes('champions league') || c.includes('europa league') || c.includes('conference league')) return '🇪🇺';
+  // UK — specific before generic
+  if (c.includes('scottish') || c.includes('spfl')) return '🏴󠁧󠁢󠁳󠁣󠁴󠁿';
+  if (c.includes('welsh') || c.includes('cymru')) return '🏴󠁧󠁢󠁷󠁬󠁳󠁿';
+  if (c.includes('northern ireland')) return '🇬🇧';
+  if (c.includes('irish') || c.includes('republic of ireland') || c.includes(' loi')) return '🇮🇪';
+  if (c.includes('premier league') || c.includes('championship') || c.includes('league one') || c.includes('league two') || c.includes('english') || c.includes('efl')) return '🏴󠁧󠁢󠁥󠁮󠁧󠁿';
+  // Continent — specific league names first
+  if (c.includes('bundesliga') || c.includes('german')) return '🇩🇪';
+  if (c.includes('laliga') || c.includes('la liga') || c.includes('primera division') || c.includes('segunda') || c.includes('spanish')) return '🇪🇸';
+  if (c.includes('brasileirao') || c.includes('brazilian') || c.includes('brazil')) return '🇧🇷';
+  if (c.includes('australian') || c.includes('australia') || c.includes('a-league')) return '🇦🇺';
+  if (c.includes('serie a') || c.includes('serie b') || c.includes('italian')) return '🇮🇹';
+  if (c.includes('ligue 1') || c.includes('ligue 2') || c.includes('french')) return '🇫🇷';
+  if (c.includes('eredivisie') || c.includes('eerste divisie') || c.includes('dutch')) return '🇳🇱';
+  if (c.includes('jupiler') || c.includes('pro league') || c.includes('belgian')) return '🇧🇪';
+  if (c.includes('primeira liga') || c.includes('liga nos') || c.includes('liga portugal') || c.includes('portuguese')) return '🇵🇹';
+  if (c.includes('ekstraklasa') || c.includes('polish')) return '🇵🇱';
+  if (c.includes('süper lig') || c.includes('super lig') || c.includes('turkish')) return '🇹🇷';
+  if (c.includes('greek')) return '🇬🇷';
+  if (c.includes('austrian') || c.includes('austria bundesliga')) return '🇦🇹';
+  if (c.includes('swiss super') || c.includes('super league suisse') || c.includes('swiss')) return '🇨🇭';
+  if (c.includes('danish') || c.includes('superliga')) return '🇩🇰';
+  if (c.includes('allsvenskan') || c.includes('swedish')) return '🇸🇪';
+  if (c.includes('eliteserien') || c.includes('norwegian')) return '🇳🇴';
+  if (c.includes('veikkausliiga') || c.includes('finnish')) return '🇫🇮';
+  if (c.includes('czech')) return '🇨🇿';
+  if (c.includes('slovak')) return '🇸🇰';
+  if (c.includes('romanian')) return '🇷🇴';
+  if (c.includes('bulgarian')) return '🇧🇬';
+  if (c.includes('hnl') || c.includes('croatian')) return '🇭🇷';
+  if (c.includes('serbian')) return '🇷🇸';
+  if (c.includes('ukrainian')) return '🇺🇦';
+  if (c.includes('russian')) return '🇷🇺';
+  if (c.includes('hungarian')) return '🇭🇺';
+  if (c.includes('mls') || c.includes('usl')) return '🇺🇸';
+  if (c.includes('argentine') || c.includes('argentinian')) return '🇦🇷';
+  return '🌍';
+}
+
+function to12hr(timeStr) {
+  if (!timeStr) return timeStr;
+  const [h, m] = timeStr.split(':').map(Number);
+  if (isNaN(h) || isNaN(m)) return timeStr;
+  const ampm = h >= 12 ? '<span style="font-size:0.7em">pm</span>' : '<span style="font-size:0.7em">am</span>';
+  const hour = h % 12 || 12;
+  return `${hour}:${String(m).padStart(2,'0')}${ampm}`;
+}
+
+function setTodayDate() {
+  const el = document.getElementById('today-date');
+  if (el) el.textContent = todayStr();
+}
+
+// ── SHEETS API ───────────────────────────────────────────────────────────────
+async function loadAllSheets(isRetry = false) {
+  document.getElementById('main-content').innerHTML = '<div class="loading"><div class="spinner"></div>Loading today\'s bets...</div>';
+  try {
+    const ranges = SHEETS.map(s => `'${s.name}'!A:X`);
+    ranges.push(`'Gambling Front'!G12`);
+    ranges.push(`'Gambling Front'!D12`); // SS stake
+    ranges.push(`'Gambling Front'!D21`); // HW stake
+    ranges.push(`'Gambling Front'!D26`); // 3D stake
+    const resp = await gapi.client.sheets.spreadsheets.values.batchGet({
+      spreadsheetId: SPREADSHEET_ID,
+      ranges
+    });
+    // Overall P&L
+    const plRange = resp.result.valueRanges[SHEETS.length];
+    const plRaw = plRange?.values?.[0]?.[0] || '';
+    console.log('Overall P&L raw value:', plRaw);
+    const plVal = String(plRaw).replace(/[£$,\s]/g, '');
+    const plNum = parseFloat(plVal);
+    const plEl = document.getElementById('overall-pl');
+    if (plEl) {
+      if (!isNaN(plNum) && plRaw !== '') {
+        const sign = plNum >= 0 ? '+' : '';
+        plEl.textContent = `${sign}£${plNum.toFixed(2)}`;
+        plEl.className = `overall-pl ${plNum > 0 ? 'pos' : plNum < 0 ? 'neg' : 'zero'}`;
+      } else if (plRaw !== '') {
+        plEl.textContent = `Overall P&L: ${plRaw}`;
+        plEl.className = 'overall-pl zero';
+      }
+    }
+    // Recommended stakes
+    const parseStake = idx => {
+      const raw = resp.result.valueRanges[SHEETS.length + 1 + idx]?.values?.[0]?.[0] || '';
+      return String(raw).replace(/[£$,\s]/g, '');
+    };
+    window.recommendedStakes = {
+      ss: parseStake(0),
+      hw: parseStake(1),
+      td: parseStake(2),
+    };
+    const today = todayStr();
+    console.log('TODAY STRING:', today);
+
+    sheetsData = resp.result.valueRanges.slice(0, SHEETS.length).map((vr, si) => {
+      const rows = vr.values || [];
+      const headerRow = SHEETS[si].headerRow;
+      rowMap[si] = {};
+      const todayRows = [];
+      const dataStartIdx = headerRow + 1;
+
+      console.log(`Sheet ${si} (${SHEETS[si].name}): total rows=${rows.length}, dataStartIdx=${dataStartIdx}`);
+
+      rows.forEach((row, i) => {
+        if (i < dataStartIdx) return;
+        const dateVal = (row[1] || '').trim();
+        if (i < dataStartIdx + 3) {
+          console.log(`  Row ${i+1}: date="${dateVal}", today="${today}", match=${dateVal===today}`);
+        }
+        if (dateVal === today) {
+          const sheetRowNum = i + 1;
+          rowMap[si][todayRows.length] = sheetRowNum;
+          todayRows.push(row);
+        }
+      });
+
+      console.log(`  Found ${todayRows.length} rows for today`);
+      return todayRows;
+    });
+    renderTab(currentTab);
+    // Refresh live/upcoming views if open
+    if (document.getElementById('live-overlay').style.display !== 'none') renderLiveView();
+    if (document.getElementById('upcoming-overlay').style.display !== 'none') renderUpcomingView();
+    updateOutcomesBadge();
+  } catch(e) {
+    console.error('LOAD ERROR:', e);
+    if (!isRetry) {
+      // Auto-retry once after a short wait — catches token timing issues on first login
+      console.log('Retrying load...');
+      await new Promise(r => setTimeout(r, 800));
+      return loadAllSheets(true);
+    }
+    showToast('Failed to load data', true);
+    document.getElementById('main-content').innerHTML = '<div class="empty-state"><div class="icon">⚠️</div>Could not load spreadsheet.<br>Check your connection and try refreshing.</div>';
+  }
+}
+
+async function writeCell(sheetName, row, col, value) {
+  // col is 0-based, row is 1-based
+  const colLetter = colToLetter(col);
+  const range = `'${sheetName}'!${colLetter}${row}`;
+  await gapi.client.sheets.spreadsheets.values.update({
+    spreadsheetId: SPREADSHEET_ID,
+    range,
+    valueInputOption: 'USER_ENTERED',
+    resource: { values: [[value]] }
+  });
+}
+
+async function writeRow(sheetName, row, startCol, values) {
+  const colLetter = colToLetter(startCol);
+  const range = `'${sheetName}'!${colLetter}${row}`;
+  await gapi.client.sheets.spreadsheets.values.update({
+    spreadsheetId: SPREADSHEET_ID,
+    range,
+    valueInputOption: 'USER_ENTERED',
+    resource: { values: [values] }
+  });
+}
+
+function colToLetter(col) {
+  let s = '';
+  col = col + 1; // 1-based
+  while (col > 0) {
+    let r = (col - 1) % 26;
+    s = String.fromCharCode(65 + r) + s;
+    col = Math.floor((col - 1) / 26);
+  }
+  return s;
+}
+
+// ── RENDER ───────────────────────────────────────────────────────────────────
+function switchTab(i) {
+  currentTab = i;
+  document.querySelectorAll('.tab').forEach((t,j) => t.classList.toggle('active', i===j));
+  renderTab(i);
+}
+
+function renderTab(si) {
+  const rows = sheetsData[si];
+  const sheet = SHEETS[si];
+  const main = document.getElementById('main-content');
+
+  if (!rows || rows.length === 0) {
+    main.innerHTML = '<div class="empty-state"><div class="icon">📋</div>No bets found for today.<br><span style="font-size:12px;color:var(--muted)">Bets will appear here once added to the sheet.</span></div>';
+    return;
+  }
+
+  // Summary — read P/L values that the spreadsheet has calculated
+  let totalPL = 0;
+  rows.forEach(row => {
+    sheet.bets.forEach(bet => {
+      if (bet.colPL != null) {
+        const raw = (row[bet.colPL] || '').toString().replace('£','').replace(',','').trim();
+        const v = parseFloat(raw);
+        if (!isNaN(v)) totalPL += v;
+      }
+    });
+  });
+
+  const html = [];
+  // Calculate all-strategy today P&L and update header
+  let allTodayPL = 0;
+  SHEETS.forEach((s, sIdx) => {
+    (sheetsData[sIdx] || []).forEach(r => {
+      s.bets.forEach(b => {
+        // For 3D dip, colPL is already the combined P&L (col 21) so don't also add colLayPL
+        if (b.colPL != null) {
+          const v = parseFloat((r[b.colPL] || '').toString().replace('£','').replace(',','').trim());
+          if (!isNaN(v)) allTodayPL += v;
+        } else if (b.colLayPL != null) {
+          // Only add lay P&L if there's no combined colPL
+          const v = parseFloat((r[b.colLayPL] || '').toString().replace('£','').replace(',','').trim());
+          if (!isNaN(v)) allTodayPL += v;
+        }
+      });
+    });
+  });
+  const todayPlEl = document.getElementById('today-pl');
+  if (todayPlEl) {
+    const sign = allTodayPL >= 0 ? '+' : '';
+    todayPlEl.textContent = `${sign}£${allTodayPL.toFixed(2)}`;
+    todayPlEl.className = `overall-pl ${allTodayPL > 0 ? 'pos' : allTodayPL < 0 ? 'neg' : 'zero'}`;
+  }
+
+  const stakeKey = si === 0 ? 'ss' : si === 1 ? 'hw' : 'td';
+  const recStake = window.recommendedStakes?.[stakeKey] || '';
+  const stakeLabel = si === 0 ? 'SS STAKE' : si === 1 ? 'HW STAKE' : '3D STAKE';
+
+  html.push(`<div class="summary-bar">
+    <div class="summary-item"><div class="label">TODAY'S BETS</div><div class="value">${rows.length}</div></div>
+    <div class="summary-item"><div class="label">TAB P&amp;L</div><div class="value ${totalPL>=0?'pos':'neg'}">${totalPL>=0?'+':''}£${totalPL.toFixed(2)}</div></div>
+    ${recStake ? `<div class="summary-item"><div class="label">${stakeLabel}</div><div class="value" style="color:var(--accent)">£${parseFloat(recStake).toFixed(2)}</div></div>` : ''}
+  </div>`);
+
+  // Split rows into active (live or future) and past (kicked off, not live)
+  const now = new Date();
+  const nowMins = now.getHours() * 60 + now.getMinutes();
+
+  const activeRows = [], pastRows = [];
+  rows.forEach((row, ri) => {
+    const timeStr = (row[2] || '').trim();
+    const parts = timeStr.split(':');
+    const kickoffMins = parts.length >= 2 ? parseInt(parts[0]) * 60 + parseInt(parts[1]) : 0;
+    const isPlacedCheck = (sheet.placedCols || []).some(c => (row[c] || '').toString().trim() !== '');
+    // Live bets always stay at top; past kick-offs go below divider (unless live)
+    if (isPlacedCheck || kickoffMins > nowMins) {
+      activeRows.push({ row, ri });
+    } else {
+      pastRows.push({ row, ri });
+    }
+  });
+
+  // Sort active by kick-off time, past by kick-off time
+  const byTime = (a, b) => {
+    const toMins = r => { const p = (r.row[2]||'').split(':'); return p.length>=2 ? parseInt(p[0])*60+parseInt(p[1]) : 0; };
+    return toMins(a) - toMins(b);
+  };
+  activeRows.sort(byTime);
+  pastRows.sort(byTime);
+
+  const renderCard = ({ row, ri }) => {
+    const homeTeam = row[5] || '?';
+    const awayTeam = row[6] || '?';
+    const time = row[2] || '';
+    const comp = row[4] || '';
+    const cardId = `card-${si}-${ri}`;
+
+    const dipBet = sheet.bets.find(b => b.type === 'dip');
+    let cardResult = null;
+    if (dipBet && (dipBet.colBackOutcome != null || dipBet.colLayOutcome != null)) {
+      const backO = (row[dipBet.colBackOutcome] || '').toLowerCase();
+      const layO  = (row[dipBet.colLayOutcome]  || '').toLowerCase();
+      if (backO || layO) {
+        if (backO === 'win'  && layO === 'lose') cardResult = 'win';
+        else if (backO === 'lose' && layO === 'win')  cardResult = 'nm';
+        else if (backO === 'lose' && (layO === 'nm' || layO === '')) cardResult = 'loss';
+      }
+    }
+
+    const outcomes = sheet.bets
+      .filter(b => b.colOutcome != null)
+      .map(b => (row[b.colOutcome] || '').toUpperCase());
+    const filled = outcomes.filter(o => o === 'WIN' || o === 'LOSE' || o === 'NM');
+    const hasAny  = filled.length > 0 || cardResult != null;
+    const hasLoss = filled.some(o => o === 'LOSE') || cardResult === 'loss';
+    const hasWin  = filled.some(o => o === 'WIN')  || cardResult === 'win';
+    const allNM   = (filled.length > 0 && filled.every(o => o === 'NM')) || cardResult === 'nm';
+    const allSettled = cardResult != null || (outcomes.length > 0 && filled.length === outcomes.length);
+    const isPlaced = !allSettled && (sheet.placedCols || []).some(c => (row[c] || '').toString().trim() !== '');
+    const notViable = !hasAny && sheet.bets.some(b => {
+      if (!b.viability) return false;
+      const odds = row[b.colOdds] || '';
+      if (!odds) return false;
+      return isBetViable(b, odds, row) === false;
+    });
+
+    const cardClass = hasLoss   ? 'match-card result-loss'
+      : allNM     ? 'match-card result-nm'
+      : hasWin    ? 'match-card result-win'
+      : notViable ? 'match-card result-nm'
+      : isPlaced  ? 'match-card bet-placed'
+      : 'match-card';
+
+    const flashUrl = `https://www.flashscore.com/football/`;
+
+    return `<div class="${cardClass}" id="${cardId}">
+      <div class="match-header" onclick="toggleCard('${cardId}')">
+        <div class="match-kickoff">${to12hr(time) || '?'}</div>
+        <div class="match-info">
+          <div class="match-teams">${homeTeam} vs ${awayTeam}</div>
+          <div class="match-meta">
+            <span class="meta-pill">${leagueFlag(comp)} ${comp}</span>
+          </div>
+        </div>
+        ${isPlaced ? `<span class="placed-badge">● Live</span>` : ''}
+        ${isPlaced ? `<a href="${flashUrl}" target="_blank" class="flashscore-btn" onclick="event.stopPropagation()" title="Search on FlashScore">⚡</a>` : ''}
+        <span class="match-chevron">⌄</span>
+      </div>
+      <div class="bet-sections">
+        <div class="divider"></div>
+        ${renderBets(si, ri, row, sheet)}
+        ${`<button class="no-bet-btn" onclick="confirmNoBet(${si}, ${ri}, '${sheet.name}')">✕ No Bet</button>`}
+      </div>
+    </div>`;
+  };
+
+  activeRows.forEach(r => html.push(renderCard(r)));
+
+  if (pastRows.length > 0) {
+    html.push(`<div class="past-divider">
+      <div class="past-divider-line"></div>
+      <span class="past-divider-label">Earlier today</span>
+      <div class="past-divider-line"></div>
+    </div>`);
+    pastRows.forEach(r => html.push(renderCard(r)));
+  }
+
+  main.innerHTML = html.join('');
+}
+
+function isBetViable(bet, odds, row) {
+  if (!bet.viability || !odds) return null; // null = no rule / not checked yet
+  const o = parseFloat(odds);
+  if (isNaN(o)) return null;
+  if (bet.viability === 'btts5') {
+    const sevenAm = parseFloat(row[7]); // col 7 = BTTS 7am odds
+    return o < sevenAm && o > 1.5;
+  }
+  if (bet.viability === 'hw5min') {
+    const sevenAm = parseFloat(row[7]);
+    return o < sevenAm && o > 1.5 && o <= 2.25;
+  }
+  if (bet.viability === 'o25_5m') {
+    const sevenAm = parseFloat(row[7]);
+    return o < sevenAm;
+  }
+  if (bet.viability === 'o25') {
+    return o < 2.0;
+  }
+  return null;
+}
+
+function renderBets(si, ri, row, sheet) {
+  if (sheet.grouped) return renderGroupedBets(si, ri, row, sheet);
+  return sheet.bets.map(bet => {
+    if (bet.type === 'dip')       return renderDipBet(si, ri, row, bet);
+    if (bet.type === 'display')   return renderDisplayBet(row, bet);
+    if (bet.type === 'oddsonly')  return renderOddsOnlyBet(si, ri, row, bet, sheet.name);
+    if (bet.type === 'stakeonly') return renderStakeOnlyBet(si, ri, row, bet, sheet.name);
+    if (bet.type === 'oddsstake') return renderOddsStakeBet(si, ri, row, bet, sheet.name);
+    if (bet.type === 'check')     return renderCheckBet(si, ri, row, bet);
+    return renderBackBet(si, ri, row, bet, sheet.name);
+  }).join('');
+}
+
+function renderGroupedBets(si, ri, row, sheet) {
+  const gid = `${si}-${ri}`;
+  const rows = sheet.bets.map(bet => {
+    if (bet.type === 'display') {
+      const odds = row[bet.colOdds] || '—';
+      return `<div class="inline-bet-row" style="margin-bottom:6px">
+        <span class="inline-label">${bet.label}</span>
+        <span class="odds-value">${odds}</span>
+      </div>`;
+    }
+    if (bet.type === 'oddsonly') {
+      const saved = row[bet.colOdds] || '';
+      return `<div class="inline-bet-row" style="margin-bottom:6px">
+        <span class="inline-label">${bet.label}</span>
+        <input class="log-input inline-input" id="g-odds-${gid}-${bet.key}" type="number" step="0.01" placeholder="odds" value="${saved}">
+      </div>`;
+    }
+    if (bet.type === 'stakeonly') {
+      const savedStake = row[bet.colStake] || '';
+      const recStake = window.recommendedStakes?.ss || '';
+      const stakeVal = savedStake || recStake;
+      const oddsDisplay = bet.fixedOdds != null ? bet.fixedOdds : (row[bet.colOdds] || '—');
+      return `<div class="inline-bet-row" style="margin-bottom:6px">
+        <span class="inline-label">${bet.label} <span style="color:var(--muted);font-size:10px">@ ${oddsDisplay}</span></span>
+        <input class="log-input inline-input" id="g-stake-${gid}-${bet.key}" type="number" step="0.01" placeholder="£" value="${stakeVal}">
+      </div>`;
+    }
+    return '';
+  }).join('');
+
+  return `<div class="bet-block">
+    ${rows}
+    <div style="display:flex;align-items:center;gap:8px;margin-top:10px">
+      <button class="inline-save-btn" style="flex:1;padding:8px" onclick="saveGroupedBets('${gid}', ${si}, ${ri}, '${sheet.name}')">Save All</button>
+      <span class="saved-inline" id="saved-g-${gid}" style="font-size:13px">✓ Saved</span>
+    </div>
+  </div>`;
+}
+
+function renderDisplayBet(row, bet) {
+  const odds = row[bet.colOdds] || '—';
+  return `<div class="bet-block">
+    <div class="bet-block-title">${bet.label}</div>
+    <div class="odds-check-row">
+      <span class="odds-label">Odds</span>
+      <span class="odds-value">${odds}</span>
+    </div>
+  </div>`;
+}
+
+function renderOddsOnlyBet(si, ri, row, bet, sheetName) {
+  const id = `${si}-${ri}-${bet.key}`;
+  const savedOdds = row[bet.colOdds] || '';
+  return `<div class="bet-block">
+    <div class="inline-bet-row">
+      <span class="inline-label">${bet.label}</span>
+      <input class="log-input inline-input" id="odds-${id}" type="number" step="0.01" placeholder="odds" value="${savedOdds}">
+      <button class="inline-save-btn" onclick="saveOddsOnly('${id}', '${sheetName}', ${si}, ${ri}, ${bet.colOdds})">Save</button>
+      <span class="saved-inline" id="saved-${id}">✓</span>
+    </div>
+  </div>`;
+}
+
+function renderOddsStakeBet(si, ri, row, bet, sheetName) {
+  const id = `${si}-${ri}-${bet.key}`;
+  const savedOdds  = row[bet.colOdds]  || '';
+  const savedStake = row[bet.colStake] || '';
+  const recStake   = window.recommendedStakes?.hw || '';
+  const stakeVal   = savedStake || recStake;
+  return `<div class="bet-block">
+    <div class="inline-bet-row">
+      <span class="inline-label">${bet.label}</span>
+      <input class="log-input inline-input" id="odds-${id}" type="number" step="0.01" placeholder="odds" value="${savedOdds}">
+      <input class="log-input inline-input" id="stake-${id}" type="number" step="0.01" placeholder="£" value="${stakeVal}">
+      <button class="inline-save-btn" onclick="saveOddsStake('${id}', '${sheetName}', ${si}, ${ri}, ${bet.colOdds}, ${bet.colStake})">Save</button>
+      <span class="saved-inline" id="saved-${id}">✓</span>
+    </div>
+  </div>`;
+}
+
+function renderStakeOnlyBet(si, ri, row, bet, sheetName) {
+  const id = `${si}-${ri}-${bet.key}`;
+  const savedStake  = row[bet.colStake] || '';
+  const savedOdds   = row[bet.colOdds]  || '';
+  const oddsDisplay = bet.fixedOdds != null ? bet.fixedOdds : (savedOdds || '—');
+  const colOdds     = bet.colOdds   != null ? bet.colOdds   : 'null';
+  const fixedOdds   = bet.fixedOdds != null ? bet.fixedOdds : 'null';
+  return `<div class="bet-block">
+    <div class="inline-bet-row">
+      <span class="inline-label">${bet.label} <span style="color:var(--muted);font-size:10px">@ ${oddsDisplay}</span></span>
+      <input class="log-input inline-input" id="stake-${id}" type="number" step="0.01" placeholder="£" value="${savedStake}">
+      <button class="inline-save-btn" onclick="saveStakeOnly('${id}', '${sheetName}', ${si}, ${ri}, ${bet.colStake}, ${colOdds}, ${fixedOdds})">Save</button>
+      <span class="saved-inline" id="saved-${id}">✓</span>
+    </div>
+  </div>`;
+}
+
+function renderCheckBet(si, ri, row, bet) {
+  const targetOdds = row[bet.colOdds] || '—';
+  return `<div class="bet-block">
+    <div class="bet-block-title">${bet.label}</div>
+    <div class="odds-check-row">
+      <span class="odds-label">Target Odds</span>
+      <span class="odds-value">${targetOdds}</span>
+    </div>
+  </div>`;
+}
+
+function renderBackBet(si, ri, row, bet, sheetName) {
+  const id = `${si}-${ri}-${bet.key}`;
+  const targetOdds = row[bet.colOdds] || '';
+  const savedStake = row[bet.colStake] || '';
+  const savedOutcome = row[bet.colOutcome] || '';
+  const savedPL = row[bet.colPL] || '';
+  const savedCumPL = row[bet.colCumPL] || '';
+  const plNum = parseFloat(savedPL);
+  const cumNum = parseFloat(savedCumPL);
+
+  return `<div class="bet-block">
+    <div class="bet-block-title">${bet.label}</div>
+    <div class="odds-check-row">
+      <span class="odds-label">Min. Odds Needed</span>
+      <span class="odds-value">${targetOdds || '—'}</span>
+      <span class="viability-badge unknown" id="vbadge-${id}">Enter odds</span>
+    </div>
+    <div class="odds-check-row">
+      <span class="odds-label">Bookie Odds Now</span>
+      <input class="odds-input" id="currodds-${id}" type="number" step="0.01" placeholder="e.g. 1.95"
+        oninput="checkViability('${id}', ${parseFloat(targetOdds)||0})">
+    </div>
+    <div class="divider" style="margin:10px 0"></div>
+    <div class="log-form">
+      <div class="log-row">
+        <span class="log-label">Odds got</span>
+        <input class="log-input" id="logodds-${id}" type="number" step="0.01" placeholder="Actual odds" value="${savedStake?targetOdds:''}">
+      </div>
+      <div class="log-row">
+        <span class="log-label">Stake</span>
+        <input class="log-input" id="logstake-${id}" type="number" step="0.01" placeholder="£" value="${savedStake}">
+      </div>
+      <div class="log-row">
+        <span class="log-label">Outcome</span>
+        <select class="outcome-select" id="logoutcome-${id}">
+          <option value="">-- Select --</option>
+          <option value="W" ${savedOutcome==='W'?'selected':''}>✅ Win</option>
+          <option value="L" ${savedOutcome==='L'?'selected':''}>❌ Loss</option>
+          <option value="V" ${savedOutcome==='V'?'selected':''}>↩ Void</option>
+        </select>
+      </div>
+      <button class="save-btn" onclick="saveBet('${id}', '${sheetName}', ${si}, ${ri}, ${JSON.stringify(bet).replace(/"/g,"'")})">Save to Sheet</button>
+      <div class="saved-badge" id="saved-${id}">✓ Saved</div>
+      ${savedPL ? `<div class="pl-row"><span>P/L</span><span class="pl-val ${plNum>=0?'pos':'neg'}">${plNum>=0?'+':''}${plNum.toFixed(2)}</span></div>` : ''}
+      ${savedCumPL ? `<div class="pl-row"><span>Cumulative</span><span class="pl-val ${cumNum>=0?'pos':'neg'}">${cumNum>=0?'+':''}${cumNum.toFixed(2)}</span></div>` : ''}
+    </div>
+  </div>`;
+}
+
+function renderDipBet(si, ri, row, bet) {
+  const id = `${si}-${ri}-dip`;
+  const sheetName = SHEETS[si].name;
+  const min20     = row[bet.col20]        || '';
+  const min27     = row[bet.col27]        || '';
+  const min35     = row[bet.col35]        || '';
+  const aveOdds   = row[bet.colAveOdds]  || '—';
+  const stake     = row[bet.colStake]     || '';
+  const layOdds   = row[bet.colLayOdds]  || '';
+  const liability = row[bet.colLiability]|| '';
+  const layBet    = row[bet.colLayBet]   || '';
+
+  return `<div class="bet-block">
+    <div class="bet-block-title">Dipping Strategy — Back @ Minutes</div>
+    <div class="dip-minutes">
+      ${[{label:"20'",val:min20,col:bet.col20},{label:"27'",val:min27,col:bet.col27},{label:"35'",val:min35,col:bet.col35}].map(m => `
+        <div class="dip-minute-block">
+          <div class="dip-minute-label">${m.label}</div>
+          <input class="dip-minute-input" type="number" step="0.01" placeholder="odds" value="${m.val}" id="dip-${id}-${m.col}">
+        </div>
+      `).join('')}
+    </div>
+    <div class="odds-check-row" style="margin-bottom:8px">
+      <span class="odds-label">Ave Odds (calculated)</span>
+      <span class="odds-value">${aveOdds}</span>
+    </div>
+    <div class="log-row">
+      <span class="log-label">Stake ea.</span>
+      <input class="log-input" id="dipstake-${id}" type="number" step="0.01" placeholder="£" value="${stake}">
+    </div>
+
+    <div class="divider" style="margin:12px 0"></div>
+    <div class="bet-block-title">Lay Bet (on goal)</div>
+    <div class="log-row">
+      <span class="log-label">Lay Odds</span>
+      <input class="log-input" id="layodds-${id}" type="number" step="0.01" placeholder="Lay odds" value="${layOdds}">
+    </div>
+    <div class="log-row">
+      <span class="log-label">Liability</span>
+      <input class="log-input" id="layliab-${id}" type="number" step="0.01" placeholder="£" value="${liability}">
+    </div>
+    <div class="log-row">
+      <span class="log-label">Lay Bet</span>
+      <input class="log-input" id="laybet-${id}" type="number" step="0.01" placeholder="£" value="${layBet}">
+    </div>
+
+    <button class="save-btn" style="margin-top:10px" onclick="saveDipBet('${id}', '${sheetName}', ${si}, ${ri}, ${JSON.stringify(bet).replace(/"/g,"'")})">Save to Sheet</button>
+    <div class="saved-badge" id="saved-${id}">✓ Saved</div>
+  </div>`;
+}
+
+// ── INTERACTIONS ──────────────────────────────────────────────────────────────
+function confirmNoBet(si, ri, sheetName) {
+  const row = sheetsData[si]?.[ri];
+  if (!row) return;
+  const homeTeam = row[5] || '?';
+  const awayTeam = row[6] || '?';
+  const confirmed = confirm(`Remove "${homeTeam} vs ${awayTeam}" from today's bets?\n\nThis will delete the entire row from the spreadsheet.`);
+  if (confirmed) executeNoBet(si, ri, sheetName);
+}
+
+async function executeNoBet(si, ri, sheetName) {
+  const sheetRow = getSheetRow(si, ri);
+  if (!sheetRow) { showToast('Row not found', true); return; }
+
+  try {
+    // Get the sheet ID for the batchUpdate request
+    const sheetMeta = await gapi.client.sheets.spreadsheets.get({
+      spreadsheetId: SPREADSHEET_ID,
+      fields: 'sheets.properties'
+    });
+    const sheetObj = sheetMeta.result.sheets.find(s => s.properties.title === sheetName);
+    if (!sheetObj) throw new Error('Sheet not found');
+    const sheetId = sheetObj.properties.sheetId;
+
+    // Delete the entire row
+    await gapi.client.sheets.spreadsheets.batchUpdate({
+      spreadsheetId: SPREADSHEET_ID,
+      resource: {
+        requests: [{
+          deleteDimension: {
+            range: {
+              sheetId: sheetId,
+              dimension: 'ROWS',
+              startIndex: sheetRow - 1, // 0-based
+              endIndex: sheetRow        // exclusive
+            }
+          }
+        }]
+      }
+    });
+
+    // Remove from in-memory cache
+    if (sheetsData[si]) {
+      sheetsData[si].splice(ri, 1);
+      const newMap = {};
+      let newIdx = 0;
+      Object.values(rowMap[si]).forEach((rowNum, idx) => {
+        if (idx !== ri) newMap[newIdx++] = rowNum;
+      });
+      rowMap[si] = newMap;
+    }
+
+    showToast('Bet removed ✓');
+    await loadAllSheets();
+  } catch(e) {
+    console.error(e);
+    showToast('Failed to remove bet', true);
+  }
+}
+
+async function fetchLiveScores(liveBets) {
+  const RAPID_KEY = '3f3a63b15bmsh173b2d8d1d9c276p1d44fejsn3069cc2a9ff4';
+  const today = new Date();
+  const dateStr = `${today.getFullYear()}-${String(today.getMonth()+1).padStart(2,'0')}-${String(today.getDate()).padStart(2,'0')}`;
+
+  try {
+    const resp = await fetch(`https://allsportsapi2.p.rapidapi.com/api/football/matches/${dateStr}`, {
+      headers: {
+        'x-rapidapi-host': 'allsportsapi2.p.rapidapi.com',
+        'x-rapidapi-key': RAPID_KEY
+      }
+    });
+    const data = await resp.json();
+    const matches = data?.result || data?.matches || data || [];
+    if (!Array.isArray(matches)) return;
+
+    const normalize = s => s.toLowerCase().replace(/[^a-z0-9]/g, '');
+
+    liveBets.forEach(bet => {
+      const el = document.getElementById(`score-${bet.si}-${bet.ri}`);
+      if (!el) return;
+
+      const normHome = normalize(bet.homeTeam);
+      const normAway = normalize(bet.awayTeam);
+
+      // Find matching match
+      const match = matches.find(m => {
+        const mHome = normalize(m.event_home_team || m.home_team?.name || '');
+        const mAway = normalize(m.event_away_team || m.away_team?.name || '');
+        return (mHome.includes(normHome) || normHome.includes(mHome)) &&
+               (mAway.includes(normAway) || normAway.includes(mAway));
+      });
+
+      if (!match) {
+        el.innerHTML = '';
+        return;
+      }
+
+      const homeScore = match.event_final_result?.split(' - ')?.[0] ??
+                        match.scores?.home ?? match.home_score ?? '?';
+      const awayScore = match.event_final_result?.split(' - ')?.[1] ??
+                        match.scores?.away ?? match.away_score ?? '?';
+      const minute    = match.event_time || match.minute || match.status_detail || '';
+      const status    = (match.event_status || match.status || '').toLowerCase();
+
+      const isLive = status.includes('progress') || status.includes('live') ||
+                     status === '1h' || status === '2h' || status === 'ht';
+
+      if (isLive) {
+        el.innerHTML = `
+          <div class="score-live">
+            <span class="score-value">${homeScore} - ${awayScore}</span>
+            <span class="score-minute">${minute ? minute + "'" : 'LIVE'}</span>
+          </div>`;
+      } else if (status.includes('finish') || status.includes('ft') || status === 'aet') {
+        el.innerHTML = `<div class="score-ft"><span class="score-value">${homeScore} - ${awayScore}</span><span class="score-ft-label">FT</span></div>`;
+      } else if (status === 'ht') {
+        el.innerHTML = `<div class="score-live"><span class="score-value">${homeScore} - ${awayScore}</span><span class="score-minute">HT</span></div>`;
+      } else {
+        el.innerHTML = ''; // not started yet
+      }
+    });
+  } catch(e) {
+    console.error('Live score fetch failed:', e);
+    liveBets.forEach(bet => {
+      const el = document.getElementById(`score-${bet.si}-${bet.ri}`);
+      if (el) el.innerHTML = '';
+    });
+  }
+}
+
+function navigateFromLive(si, ri) {
+  document.getElementById('live-overlay').style.display = 'none';
+  document.getElementById('live-btn').classList.remove('active');
+  switchTab(si);
+  setTimeout(() => {
+    const cardId = `card-${si}-${ri}`;
+    const card = document.getElementById(cardId);
+    if (card) {
+      card.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      if (!card.classList.contains('open')) card.classList.add('open');
+      card.style.transition = 'box-shadow 0.3s';
+      card.style.boxShadow = '0 0 0 3px var(--green)';
+      setTimeout(() => card.style.boxShadow = '', 1200);
+    }
+  }, 50);
+}
+
+function navigateToGame(si, ri) {
+  // Close upcoming overlay
+  document.getElementById('upcoming-overlay').style.display = 'none';
+  document.getElementById('upcoming-btn').classList.remove('active');
+  // Switch to the right tab
+  switchTab(si);
+  // Wait for render then scroll to and open the card
+  setTimeout(() => {
+    const cardId = `card-${si}-${ri}`;
+    const card = document.getElementById(cardId);
+    if (card) {
+      card.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      if (!card.classList.contains('open')) card.classList.add('open');
+      // Flash highlight to draw attention
+      card.style.transition = 'box-shadow 0.3s';
+      card.style.boxShadow = '0 0 0 3px var(--accent)';
+      setTimeout(() => card.style.boxShadow = '', 1200);
+    }
+  }, 50);
+}
+
+function toggleQuickOdds() {
+  const overlay = document.getElementById('quick-odds-overlay');
+  const btn = document.getElementById('quick-odds-tab');
+  const isOpen = overlay.style.display !== 'none';
+  // Close other overlays
+  document.getElementById('live-overlay').style.display = 'none';
+  document.getElementById('live-btn').classList.remove('active');
+  document.getElementById('upcoming-overlay').style.display = 'none';
+  document.getElementById('upcoming-btn').classList.remove('active');
+  if (isOpen) {
+    overlay.style.display = 'none';
+    btn.classList.remove('active');
+  } else {
+    overlay.style.display = 'flex';
+    btn.classList.add('active');
+    renderQuickOdds();
+  }
+}
+
+function renderQuickOdds() {
+  const content = document.getElementById('quick-odds-content');
+  const now = new Date();
+  const nowMins = now.getHours() * 60 + now.getMinutes();
+  const games = [];
+
+  SHEETS.forEach((sheet, si) => {
+    const rows = sheetsData[si];
+    if (!rows) return;
+    // Only oddsonly bets with viability rules — these are the 5-min odds
+    const oddsBets = sheet.bets.filter(b => b.type === 'oddsonly' && b.viability);
+    if (!oddsBets.length) return;
+
+    rows.forEach((row, ri) => {
+      const timeStr = (row[2] || '').trim();
+      const parts = timeStr.split(':');
+      const kickoffMins = parts.length >= 2 ? parseInt(parts[0]) * 60 + parseInt(parts[1]) : 0;
+      if (kickoffMins <= nowMins) return; // skip past games
+
+      games.push({ si, ri, row, sheet, timeStr, kickoffMins, oddsBets });
+    });
+  });
+
+  if (!games.length) {
+    content.innerHTML = `<div class="live-empty"><div class="icon">✅</div>No upcoming odds to enter.<br><span style="font-size:12px">All games have kicked off.</span></div>`;
+    return;
+  }
+
+  games.sort((a, b) => a.kickoffMins - b.kickoffMins);
+
+  content.innerHTML = games.map(({ si, ri, row, sheet, timeStr, oddsBets }) => {
+    const homeTeam = row[5] || '?';
+    const awayTeam = row[6] || '?';
+    const comp = row[4] || '';
+    const gameId = `qo-${si}-${ri}`;
+
+    const oddsRows = oddsBets.map(bet => {
+      const saved = row[bet.colOdds] || '';
+      const inputId = `${gameId}-${bet.key}`;
+      return `<div class="qo-row">
+        <span class="qo-label">${bet.label}</span>
+        <input class="qo-input" id="${inputId}" type="number" step="0.01" placeholder="odds" value="${saved}">
+        <button class="qo-save" onclick="saveQuickOdds('${gameId}', ${si}, ${ri}, '${sheet.name}', [${oddsBets.map(b => `{key:'${b.key}',colOdds:${b.colOdds}}`).join(',')}])">Save</button>
+        <span class="qo-tick" id="tick-${inputId}">✓</span>
+      </div>`;
+    }).join('');
+
+    return `<div class="qo-game">
+      <div class="qo-game-header">
+        <div class="qo-time">${to12hr(timeStr)}</div>
+        <div style="flex:1;min-width:0">
+          <div class="qo-teams">${homeTeam} vs ${awayTeam}</div>
+          <div class="qo-comp">${leagueFlag(comp)} ${comp} · ${sheet.name.replace(' Gambling','')}</div>
+        </div>
+      </div>
+      <div class="qo-rows">${oddsRows}</div>
+    </div>`;
+  }).join('');
+}
+
+async function saveQuickOdds(gameId, si, ri, sheetName, bets) {
+  const sheetRow = getSheetRow(si, ri);
+  if (!sheetRow) { showToast('Row not found', true); return; }
+  try {
+    for (const bet of bets) {
+      const val = document.getElementById(`${gameId}-${bet.key}`)?.value || '';
+      if (val) {
+        await writeCell(sheetName, sheetRow, bet.colOdds, val);
+        if (sheetsData[si]?.[ri]) sheetsData[si][ri][bet.colOdds] = val;
+      }
+    }
+    showToast('Odds saved ✓');
+    // Show ticks on all inputs for this game
+    bets.forEach(bet => {
+      const tick = document.getElementById(`tick-${gameId}-${bet.key}`);
+      if (tick) { tick.style.display = 'inline'; setTimeout(() => tick.style.display = 'none', 2000); }
+    });
+  } catch(e) {
+    console.error(e);
+    showToast('Save failed', true);
+  }
+}
+
+// ── OUTCOMES CONFIG ───────────────────────────────────────────────────────────
+const OUTCOMES_CONFIG = [
+  { sheetName: 'SS Gambling',  label: 'FHG O0.5',   colOutcome: 12, colPL: 13 },
+  { sheetName: 'SS Gambling',  label: 'Over 1.5',    colOutcome: 17, colPL: 18 },
+  { sheetName: 'HW Gambling',  label: 'Home Back',   colOutcome: 10, colPL: 11 },
+  { sheetName: '3D Gambling',  label: 'Back Bet',    colOutcome: 14, colPL: 15 },
+  { sheetName: '3D Gambling',  label: 'Lay Bet',     colOutcome: 19, colPL: 20 },
+];
+
+let allSheetRows = {}; // stores all rows fetched for outcomes tab
+
+async function updateOutcomesBadge() {
+  try {
+    const sheetNames = [...new Set(OUTCOMES_CONFIG.map(c => c.sheetName))];
+    const ranges = sheetNames.map(n => `'${n}'!A:X`);
+    const resp = await gapi.client.sheets.spreadsheets.values.batchGet({
+      spreadsheetId: SPREADSHEET_ID,
+      ranges
+    });
+
+    const rows = {};
+    resp.result.valueRanges.forEach((vr, i) => { rows[sheetNames[i]] = vr.values || []; });
+
+    let count = 0;
+    OUTCOMES_CONFIG.forEach(config => {
+      const sheetConfig = SHEETS.find(s => s.name === config.sheetName);
+      const dataStart = sheetConfig ? sheetConfig.headerRow + 1 : 10;
+      (rows[config.sheetName] || []).forEach((row, idx) => {
+        if (idx < dataStart) return;
+        const outcome = (row[config.colOutcome] || '').trim();
+        if (outcome !== 'Win' && outcome !== 'Lose') return;
+        const pl = parseFloat((row[config.colPL] || '').toString().replace('£','').replace(',','').trim());
+        if (!isNaN(pl) && pl !== 0) return;
+        count++;
+      });
+    });
+
+    const badge = document.getElementById('outcomes-badge');
+    if (badge) {
+      if (count > 0) {
+        badge.textContent = count;
+        badge.style.display = 'inline-flex';
+      } else {
+        badge.style.display = 'none';
+      }
+    }
+  } catch(e) {
+    // Silently fail — badge is non-critical
+  }
+}
+
+async function switchToCleanup() {
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  document.getElementById('cleanup-tab').classList.add('active');
+  ['live-overlay','upcoming-overlay'].forEach(id => {
+    document.getElementById(id).style.display = 'none';
+  });
+  document.getElementById('live-btn').classList.remove('active');
+  document.getElementById('upcoming-btn').classList.remove('active');
+  document.getElementById('outcomes-tab').classList.remove('active');
+
+  const main = document.getElementById('main-content');
+  main.innerHTML = '<div class="loading"><div class="spinner"></div>Loading...</div>';
+
+  try {
+    const ranges = SHEETS.map(s => `'${s.name}'!A:X`);
+    const resp = await gapi.client.sheets.spreadsheets.values.batchGet({
+      spreadsheetId: SPREADSHEET_ID,
+      ranges
+    });
+
+    const now = new Date();
+    now.setHours(0,0,0,0);
+    const stale = [];
+
+    resp.result.valueRanges.forEach((vr, si) => {
+      const sheet = SHEETS[si];
+      const rows = vr.values || [];
+      const dataStart = sheet.headerRow + 1;
+      rows.forEach((row, rowIdx) => {
+        if (rowIdx < dataStart) return;
+        const dateVal = (row[1] || '').trim();
+        if (!dateVal) return;
+        const parts = dateVal.split('/');
+        if (parts.length !== 3) return;
+        const rowDate = new Date(parts[2], parts[1]-1, parts[0]);
+        if (rowDate >= now) return;
+        const hasStake = (sheet.placedCols || []).some(c => (row[c] || '').toString().trim() !== '');
+        if (hasStake) return;
+        const homeTeam = row[5] || '';
+        if (!homeTeam) return;
+        const awayTeam = row[6] || '';
+        const comp = row[4] || '';
+        const sheetRowNum = rowIdx + 1;
+        stale.push({ dateVal, rowDate, homeTeam, awayTeam, comp, si, sheetRowNum, sheetName: sheet.name });
+      });
+    });
+
+    if (!stale.length) {
+      main.innerHTML = `<div class="empty-state"><div class="icon">✨</div>All clean!<br><span style="font-size:12px;color:var(--muted)">No old unplaced bets to remove.</span></div>`;
+      return;
+    }
+
+    stale.sort((a, b) => a.rowDate - b.rowDate);
+
+    const html = [];
+    html.push(`<div class="summary-bar">
+      <div class="summary-item"><div class="label">TO REMOVE</div><div class="value">${stale.length}</div></div>
+    </div>`);
+
+    stale.forEach(item => {
+      const cardId = `cleanup-${item.si}-${item.sheetRowNum}`;
+      html.push(`<div class="match-card" id="${cardId}" style="border-left:3px solid #e07b00">
+        <div class="match-header">
+          <div class="match-kickoff" style="background:#e07b00;font-size:12px;letter-spacing:0">${item.dateVal}</div>
+          <div class="match-info">
+            <div class="match-teams">${item.homeTeam} vs ${item.awayTeam}</div>
+            <div class="match-meta">
+              <span class="meta-pill">${leagueFlag(item.comp)} ${item.comp} · ${item.sheetName.replace(' Gambling','')}</span>
+            </div>
+          </div>
+          <button class="no-bet-btn" style="width:auto;margin:0;padding:6px 14px;flex-shrink:0" onclick="deleteCleanupRow(${item.si}, ${item.sheetRowNum}, '${item.sheetName}', '${cardId}')">🗑 Delete</button>
+        </div>
+      </div>`);
+    });
+
+    main.innerHTML = html.join('');
+  } catch(e) {
+    console.error(e);
+    main.innerHTML = `<div class="empty-state"><div class="icon">⚠️</div>Failed to load data.</div>`;
+  }
+}
+
+async function deleteCleanupRow(si, sheetRowNum, sheetName, cardId) {
+  const card = document.getElementById(cardId);
+  const btn = card?.querySelector('button');
+  if (btn) { btn.disabled = true; btn.textContent = 'Deleting...'; }
+
+  try {
+    const sheetMeta = await gapi.client.sheets.spreadsheets.get({
+      spreadsheetId: SPREADSHEET_ID,
+      fields: 'sheets.properties'
+    });
+    const sheetObj = sheetMeta.result.sheets.find(s => s.properties.title === sheetName);
+    if (!sheetObj) throw new Error('Sheet not found');
+
+    await gapi.client.sheets.spreadsheets.batchUpdate({
+      spreadsheetId: SPREADSHEET_ID,
+      resource: {
+        requests: [{
+          deleteDimension: {
+            range: {
+              sheetId: sheetObj.properties.sheetId,
+              dimension: 'ROWS',
+              startIndex: sheetRowNum - 1,
+              endIndex: sheetRowNum
+            }
+          }
+        }]
+      }
+    });
+
+    showToast('Row deleted ✓');
+    await loadAllSheets();
+    if (card) {
+      card.style.transition = 'opacity 0.4s, transform 0.4s';
+      card.style.opacity = '0';
+      card.style.transform = 'translateX(60px)';
+      setTimeout(() => {
+        card.remove();
+        const remaining = document.querySelectorAll('#main-content .match-card').length;
+        const bar = document.querySelector('#main-content .summary-bar .value');
+        if (!remaining) {
+          document.getElementById('main-content').innerHTML = `<div class="empty-state"><div class="icon">✨</div>All clean!<br><span style="font-size:12px;color:var(--muted)">No old unplaced bets to remove.</span></div>`;
+        } else if (bar) {
+          bar.textContent = remaining;
+        }
+      }, 400);
+    }
+  } catch(e) {
+    console.error(e);
+    showToast('Delete failed', true);
+    if (btn) { btn.disabled = false; btn.textContent = '🗑 Delete'; }
+  }
+}
+
+async function switchToOutcomes() {
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  document.getElementById('outcomes-tab').classList.add('active');
+  ['live-overlay','upcoming-overlay'].forEach(id => {
+    document.getElementById(id).style.display = 'none';
+  });
+  document.getElementById('live-btn').classList.remove('active');
+  document.getElementById('upcoming-btn').classList.remove('active');
+
+  const main = document.getElementById('main-content');
+  main.innerHTML = '<div class="loading"><div class="spinner"></div>Loading...</div>';
+
+  try {
+    const sheetNames = [...new Set(OUTCOMES_CONFIG.map(c => c.sheetName))];
+    const ranges = sheetNames.map(n => `'${n}'!A:X`);
+    const resp = await gapi.client.sheets.spreadsheets.values.batchGet({
+      spreadsheetId: SPREADSHEET_ID,
+      ranges
+    });
+
+    allSheetRows = {};
+    resp.result.valueRanges.forEach((vr, i) => {
+      allSheetRows[sheetNames[i]] = vr.values || [];
+    });
+
+    const pending = [];
+    OUTCOMES_CONFIG.forEach(config => {
+      const rows = allSheetRows[config.sheetName] || [];
+      const sheetConfig = SHEETS.find(s => s.name === config.sheetName);
+      const dataStart = sheetConfig ? sheetConfig.headerRow + 1 : 10;
+
+      rows.forEach((row, rowIdx) => {
+        if (rowIdx < dataStart) return;
+        const outcome = (row[config.colOutcome] || '').trim();
+        if (outcome !== 'Win' && outcome !== 'Lose') return;
+        const pl = (row[config.colPL] || '').toString().replace('£','').replace(',','').trim();
+        const plNum = parseFloat(pl);
+        if (!isNaN(plNum) && plNum !== 0) return;
+
+        const homeTeam = row[5] || '?';
+        const awayTeam = row[6] || '?';
+        const date = row[1] || '';
+        const comp = row[4] || '';
+        const sheetRowNum = rowIdx + 1;
+        const cardId = `oc-${config.sheetName.replace(/\s/g,'-')}-${sheetRowNum}-${config.colPL}`;
+
+        pending.push({ date, html: `
+          <div class="match-card oc-card oc-${outcome.toLowerCase()}" id="${cardId}">
+            <div class="match-header" style="cursor:default">
+              <div class="match-kickoff" style="background:${outcome==='Win'?'var(--green)':'var(--red)'};font-size:11px;letter-spacing:0;min-width:36px">${outcome}</div>
+              <div class="match-info">
+                <div class="match-teams">${homeTeam} vs ${awayTeam}</div>
+                <div class="match-meta">
+                  <span class="meta-pill">${leagueFlag(comp)} ${comp} · ${config.sheetName.replace(' Gambling','')} · ${config.label} · ${date}</span>
+                </div>
+              </div>
+            </div>
+            <div style="padding:0 14px 12px;display:flex;align-items:center;gap:8px">
+              <span style="font-size:11px;font-weight:600;color:var(--muted);min-width:55px">P&L (£)</span>
+              <input class="oc-pl-input" id="pl-${cardId}" type="number" step="0.01">
+              <button class="oc-save" onclick="saveOutcomePL('${cardId}','${config.sheetName}',${sheetRowNum},${config.colPL})">Save</button>
+            </div>
+          </div>`
+        });
+      });
+    });
+
+    if (!pending.length) {
+      main.innerHTML = `<div class="empty-state"><div class="icon">✅</div>All outcomes recorded!<br><span style="font-size:12px;color:var(--muted)">Nothing needs updating right now.</span></div>`;
+      return;
+    }
+
+    pending.sort((a, b) => {
+      const parse = d => { const p = d.split('/'); return p.length===3 ? new Date(p[2],p[1]-1,p[0]) : new Date(0); };
+      return parse(b.date) - parse(a.date);
+    });
+
+    main.innerHTML = `<div class="summary-bar">
+      <div class="summary-item"><div class="label">TO ENTER</div><div class="value" id="oc-count">${pending.length}</div></div>
+    </div>` + pending.map(p => p.html).join('');
+
+  } catch(e) {
+    console.error(e);
+    main.innerHTML = `<div class="empty-state"><div class="icon">⚠️</div>Failed to load data.</div>`;
+  }
+}
+
+function toggleOutcomes() { switchToOutcomes(); }
+
+async function saveOutcomePL(cardId, sheetName, sheetRow, colPL) {
+  const input = document.getElementById(`pl-${cardId}`);
+  const val = input?.value?.trim();
+  if (!val) { showToast('Enter a P&L value first', true); return; }
+
+  const btn = document.querySelector(`button[onclick*="'${cardId}'"]`);
+  btn.disabled = true; btn.textContent = 'Saving...';
+
+  try {
+    await writeCell(sheetName, sheetRow, colPL, val);
+    showToast('Saved ✓');
+    const card = document.getElementById(cardId);
+    if (card) {
+      card.style.transition = 'opacity 0.4s, transform 0.4s';
+      card.style.opacity = '0';
+      card.style.transform = 'translateX(60px)';
+      setTimeout(() => {
+        card.remove();
+        const remaining = document.querySelectorAll('#main-content .oc-card').length;
+        const counter = document.getElementById('oc-count');
+        if (!remaining) {
+          document.getElementById('main-content').innerHTML = `<div class="empty-state"><div class="icon">✅</div>All outcomes recorded!<br><span style="font-size:12px;color:var(--muted)">Nothing needs updating right now.</span></div>`;
+        } else if (counter) {
+          counter.textContent = remaining;
+        }
+      }, 400);
+    }
+    updateOutcomesBadge();
+    btn.textContent = 'Save'; btn.disabled = false;
+  } catch(e) {
+    console.error(e);
+    showToast('Save failed', true);
+    btn.textContent = 'Save'; btn.disabled = false;
+  }
+}
+
+function toggleUpcomingView() {
+  const overlay = document.getElementById('upcoming-overlay');
+  const btn = document.getElementById('upcoming-btn');
+  const isOpen = overlay.style.display !== 'none';
+  // Close live if open
+  document.getElementById('live-overlay').style.display = 'none';
+  document.getElementById('live-btn').classList.remove('active');
+  if (isOpen) {
+    overlay.style.display = 'none';
+    btn.classList.remove('active');
+  } else {
+    overlay.style.display = 'flex';
+    btn.classList.add('active');
+    renderUpcomingView();
+  }
+}
+
+function renderUpcomingView() {
+  const content = document.getElementById('upcoming-content');
+
+  // Get current time as HH:MM for comparison
+  const now = new Date();
+  const nowMins = now.getHours() * 60 + now.getMinutes();
+
+  const upcoming = [];
+
+  SHEETS.forEach((sheet, si) => {
+    const rows = sheetsData[si];
+    if (!rows) return;
+    rows.forEach((row, ri) => {
+      const timeStr = (row[2] || '').trim(); // e.g. "14:30"
+      if (!timeStr) return;
+
+      // Parse kick-off time
+      const parts = timeStr.split(':');
+      if (parts.length < 2) return;
+      const kickoffMins = parseInt(parts[0]) * 60 + parseInt(parts[1]);
+      if (isNaN(kickoffMins) || kickoffMins <= nowMins) return;
+
+      const homeTeam = row[5] || '?';
+      const awayTeam = row[6] || '?';
+      const comp = row[4] || '';
+
+      // Work out result class same as main tab
+      let resultClass = '';
+      const dipBet = sheet.bets.find(b => b.type === 'dip');
+      if (dipBet) {
+        const backO = (row[dipBet.colBackOutcome] || '').toLowerCase();
+        const layO  = (row[dipBet.colLayOutcome]  || '').toLowerCase();
+        if (backO === 'win'  && layO === 'lose') resultClass = 'result-win';
+        else if (backO === 'lose' && layO === 'win')  resultClass = 'result-nm';
+        else if (backO === 'lose' && (layO === 'nm' || layO === '')) resultClass = 'result-loss';
+      } else {
+        const outcomes = sheet.bets
+          .filter(b => b.colOutcome != null)
+          .map(b => (row[b.colOutcome] || '').toUpperCase());
+        const filled = outcomes.filter(o => o === 'WIN' || o === 'LOSE' || o === 'NM');
+        if (filled.some(o => o === 'LOSE')) resultClass = 'result-loss';
+        else if (filled.length > 0 && filled.every(o => o === 'NM')) resultClass = 'result-nm';
+        else if (filled.some(o => o === 'WIN')) resultClass = 'result-win';
+      }
+
+      const isPlaced = (sheet.placedCols || []).some(c => (row[c] || '').toString().trim() !== '');
+
+      upcoming.push({ kickoffMins, timeStr, html: `
+        <div class="live-card ${resultClass}${isPlaced ? ' bet-placed' : ''}" onclick="navigateToGame(${si},${ri})" style="cursor:pointer">
+          <div class="live-card-header">
+            <div class="live-card-kickoff" style="${!resultClass ? 'background:var(--accent)' : ''}">${to12hr(timeStr)}</div>
+            <div class="live-card-info">
+              <div class="live-card-teams">${homeTeam} vs ${awayTeam}</div>
+              <div class="live-card-meta">${leagueFlag(comp)} ${comp} · ${sheet.name.replace(' Gambling','')}</div>
+            </div>
+            ${isPlaced ? '<span class="placed-badge" style="margin-right:4px">● Live</span>' : ''}
+          </div>
+        </div>`
+      });
+    });
+  });
+
+  if (upcoming.length === 0) {
+    content.innerHTML = `<div class="live-empty"><div class="icon">✅</div>No upcoming bets.<br><span style="font-size:12px">All of today's bets have kicked off.</span></div>`;
+    return;
+  }
+
+  upcoming.sort((a, b) => a.kickoffMins - b.kickoffMins);
+  content.innerHTML = upcoming.map(u => u.html).join('');
+}
+
+function toggleLiveView() {
+  const overlay = document.getElementById('live-overlay');
+  const btn = document.getElementById('live-btn');
+  const isOpen = overlay.style.display !== 'none';
+  // Close upcoming if open
+  document.getElementById('upcoming-overlay').style.display = 'none';
+  document.getElementById('upcoming-btn').classList.remove('active');
+  if (isOpen) {
+    overlay.style.display = 'none';
+    btn.classList.remove('active');
+  } else {
+    overlay.style.display = 'flex';
+    btn.classList.add('active');
+    renderLiveView();
+  }
+}
+
+function renderLiveView() {
+  const content = document.getElementById('live-content');
+  const liveBets = [];
+
+  SHEETS.forEach((sheet, si) => {
+    const rows = sheetsData[si];
+    if (!rows) return;
+    rows.forEach((row, ri) => {
+      // Only include if a stake has been saved (placed)
+      const isPlaced = (sheet.placedCols || []).some(c => (row[c] || '').toString().trim() !== '');
+      if (!isPlaced) return;
+
+      // Exclude if all outcomes are recorded — bet is finished
+      const dipBet = sheet.bets.find(b => b.type === 'dip');
+      if (dipBet) {
+        const backO = (row[dipBet.colBackOutcome] || '');
+        const layO  = (row[dipBet.colLayOutcome]  || '');
+        if (backO && layO) return; // both set — settled
+      } else {
+        const outcomeBets = sheet.bets.filter(b => b.colOutcome != null);
+        const allSettled = outcomeBets.length > 0 && outcomeBets.every(b => (row[b.colOutcome] || '') !== '');
+        if (allSettled) return;
+      }
+
+      const homeTeam = row[5] || '?';
+      const awayTeam = row[6] || '?';
+      const time = row[2] || '?';
+      const comp = row[4] || '';
+
+      // Work out card result class
+      let resultClass = '';
+      if (dipBet) {
+        const backO = (row[dipBet.colBackOutcome] || '').toLowerCase();
+        const layO  = (row[dipBet.colLayOutcome]  || '').toLowerCase();
+        if (backO === 'win'  && layO === 'lose') resultClass = 'result-win';
+        else if (backO === 'lose' && layO === 'win')  resultClass = 'result-nm';
+        else if (backO === 'lose' && (layO === 'nm' || layO === '')) resultClass = 'result-loss';
+      } else {
+        const outcomes = sheet.bets
+          .filter(b => b.colOutcome != null)
+          .map(b => (row[b.colOutcome] || '').toUpperCase());
+        const filled = outcomes.filter(o => o === 'WIN' || o === 'LOSE' || o === 'NM');
+        if (filled.some(o => o === 'LOSE')) resultClass = 'result-loss';
+        else if (filled.length > 0 && filled.every(o => o === 'NM')) resultClass = 'result-nm';
+        else if (filled.some(o => o === 'WIN')) resultClass = 'result-win';
+      }
+
+      // Build outcome rows — simplified for all strategies in live view
+      let cardBody = '';
+      const outcomeRows = [];
+      if (dipBet) {
+        // 3D — simplified back/lay outcome buttons only
+        const backO = row[dipBet.colBackOutcome] || '';
+        const layO  = row[dipBet.colLayOutcome]  || '';
+        const liveId = `live-${si}-${ri}`;
+        outcomeRows.push(`<div class="live-outcome-row">
+          <span class="live-outcome-label">Back:</span>
+          <button class="outcome-toggle win ${backO==='Win'?'active':''}"  onclick="event.stopPropagation();saveOutcome('${liveId}-back','${sheet.name}',${si},${ri},${dipBet.colBackOutcome},'Win')">✓ Win</button>
+          <button class="outcome-toggle loss ${backO==='Lose'?'active':''}" onclick="event.stopPropagation();saveOutcome('${liveId}-back','${sheet.name}',${si},${ri},${dipBet.colBackOutcome},'Lose')">✗ Lose</button>
+        </div>`);
+        outcomeRows.push(`<div class="live-outcome-row">
+          <span class="live-outcome-label">Lay:</span>
+          <button class="outcome-toggle win ${layO==='Win'?'active':''}"  onclick="event.stopPropagation();saveOutcome('${liveId}-lay','${sheet.name}',${si},${ri},${dipBet.colLayOutcome},'Win')">✓ Win</button>
+          <button class="outcome-toggle loss ${layO==='Lose'?'active':''}" onclick="event.stopPropagation();saveOutcome('${liveId}-lay','${sheet.name}',${si},${ri},${dipBet.colLayOutcome},'Lose')">✗ Lose</button>
+          <button class="outcome-toggle void ${layO==='NM'?'active':''}"  onclick="event.stopPropagation();saveOutcome('${liveId}-lay','${sheet.name}',${si},${ri},${dipBet.colLayOutcome},'NM')">— NM</button>
+        </div>`);
+      } else {
+        sheet.bets.filter(b => b.colOutcome != null).forEach(bet => {
+          const saved = row[bet.colOutcome] || '';
+          const liveId = `live-${si}-${ri}-${bet.key}`;
+          const isHW = sheet.name === 'HW Gambling';
+          outcomeRows.push(`<div class="live-outcome-row">
+            <span class="live-outcome-label">${bet.label}:</span>
+            <button class="outcome-toggle win ${saved==='Win'?'active':''}"  onclick="event.stopPropagation();saveOutcome('${liveId}','${sheet.name}',${si},${ri},${bet.colOutcome},'Win')">✓ Win</button>
+            <button class="outcome-toggle loss ${saved==='Lose'?'active':''}" onclick="event.stopPropagation();saveOutcome('${liveId}','${sheet.name}',${si},${ri},${bet.colOutcome},'Lose')">✗ Lose</button>
+            ${!isHW ? `<button class="outcome-toggle void ${saved==='NM'?'active':''}" onclick="event.stopPropagation();saveOutcome('${liveId}','${sheet.name}',${si},${ri},${bet.colOutcome},'NM')">— NM</button>` : ''}
+          </div>`);
+        });
+      }
+      cardBody = outcomeRows.length ? `<div class="live-card-outcomes">${outcomeRows.join('')}</div>` : '';
+
+      liveBets.push({ time, si, ri, homeTeam, awayTeam, html: `
+        <div class="live-card ${resultClass}" id="livecard-${si}-${ri}" onclick="navigateFromLive(${si},${ri})" style="cursor:pointer">
+          <div class="live-card-header">
+            <div class="live-card-kickoff">${to12hr(time)}</div>
+            <div class="live-card-info">
+              <div class="live-card-teams">${homeTeam} vs ${awayTeam}</div>
+              <div class="live-card-meta">${leagueFlag(comp)} ${comp} · ${sheet.name.replace(' Gambling','')}</div>
+            </div>
+            <div class="live-score-badge" id="score-${si}-${ri}">
+              <span class="score-loading">...</span>
+            </div>
+          </div>
+          ${cardBody}
+        </div>`
+      });
+    });
+  });
+
+  if (liveBets.length === 0) {
+    content.innerHTML = `<div class="live-empty"><div class="icon">🎯</div>No live bets right now.<br><span style="font-size:12px">Bets appear here once a stake is saved.</span></div>`;
+    return;
+  }
+
+  // Sort by kick-off time
+  liveBets.sort((a, b) => a.time.localeCompare(b.time));
+  content.innerHTML = liveBets.map(b => b.html).join('');
+
+  // Fetch live scores async after rendering
+  fetchLiveScores(liveBets);
+}
+
+function toggleCard(cardId) {
+  document.getElementById(cardId).classList.toggle('open');
+}
+
+function checkViability(id, targetOdds) {
+  const input = document.getElementById('currodds-' + id);
+  const badge = document.getElementById('vbadge-' + id);
+  const curr = parseFloat(input.value);
+  if (!curr || !targetOdds) { badge.className = 'viability-badge unknown'; badge.textContent = 'Enter odds'; return; }
+  if (curr >= targetOdds) { badge.className = 'viability-badge good'; badge.textContent = '✓ VIABLE'; }
+  else { badge.className = 'viability-badge bad'; badge.textContent = '✗ TOO LOW'; }
+}
+
+function getSheetRow(si, ri) {
+  return rowMap[si][ri] || null;
+}
+
+async function saveGroupedBets(gid, si, ri, sheetName) {
+  const sheet = SHEETS[si];
+  const sheetRow = getSheetRow(si, ri);
+  if (!sheetRow) { showToast('Row not found', true); return; }
+
+  const btn = document.querySelector(`button[onclick*="saveGroupedBets('${gid}'"]`);
+  btn.disabled = true; btn.textContent = 'Saving...';
+
+  try {
+    for (const bet of sheet.bets) {
+      if (bet.type === 'oddsonly') {
+        const val = document.getElementById(`g-odds-${gid}-${bet.key}`)?.value || '';
+        if (val) {
+          await writeCell(sheetName, sheetRow, bet.colOdds, val);
+          if (sheetsData[si]?.[ri]) sheetsData[si][ri][bet.colOdds] = val;
+        }
+      }
+      if (bet.type === 'stakeonly') {
+        const stake = document.getElementById(`g-stake-${gid}-${bet.key}`)?.value || '';
+        if (stake) {
+          await writeCell(sheetName, sheetRow, bet.colStake, stake);
+          if (bet.colOdds != null && bet.fixedOdds != null) {
+            await writeCell(sheetName, sheetRow, bet.colOdds, bet.fixedOdds);
+          }
+          if (sheetsData[si]?.[ri]) {
+            sheetsData[si][ri][bet.colStake] = stake;
+            if (bet.colOdds != null && bet.fixedOdds != null) sheetsData[si][ri][bet.colOdds] = bet.fixedOdds;
+          }
+        }
+      }
+    }
+
+    showToast('Saved ✓');
+    const savedEl = document.getElementById(`saved-g-${gid}`);
+    if (savedEl) { savedEl.style.display = 'inline'; setTimeout(() => savedEl.style.display = 'none', 2000); }
+    btn.textContent = 'Save All'; btn.disabled = false;
+    await loadAllSheets();
+  } catch(e) {
+    console.error(e);
+    showToast('Save failed', true);
+    btn.textContent = 'Save All'; btn.disabled = false;
+  }
+}
+
+async function saveOddsOnly(id, sheetName, si, ri, colOdds) {
+  const odds = document.getElementById('odds-' + id)?.value || '';
+  const btn = document.querySelector(`button[onclick*="saveOddsOnly('${id}'"]`);
+  if (!odds) { showToast('Enter odds first', true); return; }
+  btn.disabled = true; btn.textContent = 'Saving...';
+  try {
+    const sheetRow = getSheetRow(si, ri);
+    if (!sheetRow) throw new Error('Row not found');
+    await writeCell(sheetName, sheetRow, colOdds, odds);
+    showToast('Saved ✓');
+    const savedEl = document.getElementById('saved-' + id);
+    if (savedEl) { savedEl.style.display = 'inline'; }
+    btn.textContent = 'Save'; btn.disabled = false;
+    await loadAllSheets();
+  } catch(e) {
+    console.error(e);
+    showToast('Save failed', true);
+    btn.textContent = 'Save'; btn.disabled = false;
+  }
+}
+
+async function saveOddsStake(id, sheetName, si, ri, colOdds, colStake) {
+  const odds  = document.getElementById('odds-'  + id)?.value || '';
+  const stake = document.getElementById('stake-' + id)?.value || '';
+  const btn   = document.querySelector(`button[onclick*="saveOddsStake('${id}'"]`);
+  if (!odds && !stake) { showToast('Enter odds or stake first', true); return; }
+  btn.disabled = true; btn.textContent = 'Saving...';
+  try {
+    const sheetRow = getSheetRow(si, ri);
+    if (!sheetRow) throw new Error('Row not found');
+    if (odds)  await writeCell(sheetName, sheetRow, colOdds,  odds);
+    if (stake) await writeCell(sheetName, sheetRow, colStake, stake);
+    // Update in-memory cache
+    if (sheetsData[si] && sheetsData[si][ri]) {
+      if (odds)  sheetsData[si][ri][colOdds]  = odds;
+      if (stake) sheetsData[si][ri][colStake] = stake;
+    }
+    showToast('Saved ✓');
+    const savedEl = document.getElementById('saved-' + id);
+    if (savedEl) { savedEl.style.display = 'inline'; }
+    btn.textContent = 'Save'; btn.disabled = false;
+    await loadAllSheets();
+  } catch(e) {
+    console.error(e);
+    showToast('Save failed', true);
+    btn.textContent = 'Save'; btn.disabled = false;
+  }
+}
+
+async function saveOutcome(id, sheetName, si, ri, colOutcome, value) {
+  try {
+    const sheetRow = getSheetRow(si, ri);
+    if (!sheetRow) throw new Error('Row not found');
+    const btn = document.querySelector(`.outcome-toggle[onclick*="'${value}'"][onclick*="'${id}'"]`);
+    const isActive = btn && btn.classList.contains('active');
+    const writeValue = isActive ? '' : value;
+    await writeCell(sheetName, sheetRow, colOutcome, writeValue);
+    showToast(isActive ? 'Cleared' : 'Saved ✓');
+
+    // ── Update in-memory cache so live/upcoming views stay in sync ──
+    if (sheetsData[si] && sheetsData[si][ri]) {
+      sheetsData[si][ri][colOutcome] = writeValue;
+    }
+
+    // Update buttons in this outcome row without reloading
+    if (btn) {
+      const toggleRow = btn.closest('.outcome-toggle-row');
+      if (toggleRow) {
+        toggleRow.querySelectorAll('.outcome-toggle').forEach(b => b.classList.remove('active'));
+        if (!isActive) btn.classList.add('active');
+      }
+    }
+
+    // Helper: derive result class from a card element
+    function getResultClass(cardEl) {
+      const allRows = cardEl.querySelectorAll('.outcome-toggle-row');
+      const activeVals = Array.from(cardEl.querySelectorAll('.outcome-toggle.active'))
+        .map(b => b.textContent.trim().toLowerCase());
+      const hasWin  = activeVals.some(v => v.includes('win'));
+      const hasLose = activeVals.some(v => v.includes('lose'));
+      const hasNM   = activeVals.some(v => v.includes('nm'));
+      if (allRows.length >= 2) {
+        // 3D back/lay logic
+        const backActive = allRows[0].querySelector('.outcome-toggle.active')?.textContent.trim().toLowerCase() || '';
+        const layActive  = allRows[1].querySelector('.outcome-toggle.active')?.textContent.trim().toLowerCase() || '';
+        if (backActive.includes('win')  && layActive.includes('lose')) return 'result-win';
+        if (backActive.includes('lose') && layActive.includes('win'))  return 'result-nm';
+        if (backActive.includes('lose') && (layActive.includes('nm') || layActive === '')) return 'result-loss';
+        return null;
+      }
+      if (hasLose) return 'result-loss';
+      if (hasNM && !hasWin) return 'result-nm';
+      if (hasWin) return 'result-win';
+      return null;
+    }
+
+    // Update main tab card colour
+    const card = document.getElementById(`card-${si}-${ri}`);
+    if (card) {
+      const resultClass = getResultClass(card);
+      card.classList.remove('result-win', 'result-loss', 'result-nm', 'bet-placed');
+      card.querySelector('.placed-badge')?.remove();
+      if (resultClass) card.classList.add(resultClass);
+    }
+
+    // Re-render live view if open — same logic as main tabs use renderTab()
+    if (document.getElementById('live-overlay').style.display !== 'none') {
+      renderLiveView();
+    }
+  } catch(e) {
+    console.error(e);
+    showToast('Save failed', true);
+  }
+}
+
+async function saveStakeOnly(id, sheetName, si, ri, colStake, colOdds, fixedOdds) {
+  const stake = document.getElementById('stake-' + id)?.value || '';
+  const btn = document.querySelector(`button[onclick*="saveStakeOnly('${id}'"]`);
+  if (!stake) { showToast('Enter a stake first', true); return; }
+  btn.disabled = true; btn.textContent = 'Saving...';
+  try {
+    const sheetRow = getSheetRow(si, ri);
+    if (!sheetRow) throw new Error('Row not found');
+    await writeCell(sheetName, sheetRow, colStake, stake);
+    if (colOdds != null && colOdds !== 'null' && fixedOdds != null && fixedOdds !== 'null') {
+      await writeCell(sheetName, sheetRow, colOdds, fixedOdds);
+    }
+    // Update in-memory cache
+    if (sheetsData[si] && sheetsData[si][ri]) {
+      sheetsData[si][ri][colStake] = stake;
+      if (colOdds != null && colOdds !== 'null') sheetsData[si][ri][colOdds] = fixedOdds;
+    }
+    showToast('Saved ✓');
+    const savedEl2 = document.getElementById('saved-' + id);
+    if (savedEl2) { savedEl2.style.display = 'inline'; }
+    btn.textContent = 'Save'; btn.disabled = false;
+    await loadAllSheets();
+  } catch(e) {
+    console.error(e);
+    showToast('Save failed', true);
+    btn.textContent = 'Save'; btn.disabled = false;
+  }
+}
+
+async function saveBet(id, sheetName, si, ri, bet) {
+  const logOdds   = document.getElementById('logodds-' + id)?.value || '';
+  const stake     = document.getElementById('logstake-' + id)?.value || '';
+  const outcome   = document.getElementById('logoutcome-' + id)?.value || '';
+  const btn       = document.querySelector(`button[onclick*="'${id}'"]`);
+
+  if (!stake && !outcome) { showToast('Enter at least a stake or outcome', true); return; }
+
+  btn.disabled = true; btn.textContent = 'Saving...';
+
+  try {
+    const sheetRow = getSheetRow(si, ri);
+    if (!sheetRow) throw new Error('Row not found');
+
+    // Calculate P/L
+    let pl = '';
+    if (stake && outcome) {
+      const s = parseFloat(stake), o = parseFloat(logOdds || bet.colOdds);
+      if (outcome === 'W') pl = ((o - 1) * s).toFixed(2);
+      else if (outcome === 'L') pl = (-s).toFixed(2);
+      else pl = '0';
+    }
+
+    // Write stake, outcome, P/L
+    if (bet.colStake != null) await writeCell(sheetName, sheetRow, bet.colStake, stake);
+    if (bet.colOutcome != null) await writeCell(sheetName, sheetRow, bet.colOutcome, outcome);
+    if (bet.colPL != null && pl !== '') await writeCell(sheetName, sheetRow, bet.colPL, pl);
+
+    showToast('Saved ✓');
+    document.getElementById('saved-' + id).style.display = 'block';
+    btn.textContent = 'Save to Sheet'; btn.disabled = false;
+    await loadAllSheets();
+  } catch(e) {
+    console.error(e);
+    showToast('Save failed', true);
+    btn.textContent = 'Save to Sheet'; btn.disabled = false;
+  }
+}
+
+async function saveDipBet(id, sheetName, si, ri, bet) {
+  const btn = document.querySelector(`button[onclick*="saveDipBet('${id}'"]`);
+  btn.disabled = true; btn.textContent = 'Saving...';
+
+  try {
+    const sheetRow = getSheetRow(si, ri);
+    if (!sheetRow) throw new Error('Row not found');
+
+    const min20    = document.getElementById(`dip-${id}-${bet.col20}`)?.value || '';
+    const min27    = document.getElementById(`dip-${id}-${bet.col27}`)?.value || '';
+    const min35    = document.getElementById(`dip-${id}-${bet.col35}`)?.value || '';
+    const stake    = document.getElementById(`dipstake-${id}`)?.value || '';
+    const layOdds  = document.getElementById(`layodds-${id}`)?.value || '';
+    const liability= document.getElementById(`layliab-${id}`)?.value || '';
+    const layBet   = document.getElementById(`laybet-${id}`)?.value || '';
+
+    if (min20)    await writeCell(sheetName, sheetRow, bet.col20, min20);
+    if (min27)    await writeCell(sheetName, sheetRow, bet.col27, min27);
+    if (min35)    await writeCell(sheetName, sheetRow, bet.col35, min35);
+    if (stake)    await writeCell(sheetName, sheetRow, bet.colStake, stake);
+    if (layOdds)  await writeCell(sheetName, sheetRow, bet.colLayOdds, layOdds);
+    if (liability)await writeCell(sheetName, sheetRow, bet.colLiability, liability);
+    if (layBet)   await writeCell(sheetName, sheetRow, bet.colLayBet, layBet);
+
+    // Update in-memory cache
+    if (sheetsData[si]?.[ri]) {
+      if (min20)    sheetsData[si][ri][bet.col20]        = min20;
+      if (min27)    sheetsData[si][ri][bet.col27]        = min27;
+      if (min35)    sheetsData[si][ri][bet.col35]        = min35;
+      if (stake)    sheetsData[si][ri][bet.colStake]     = stake;
+      if (layOdds)  sheetsData[si][ri][bet.colLayOdds]   = layOdds;
+      if (liability)sheetsData[si][ri][bet.colLiability] = liability;
+      if (layBet)   sheetsData[si][ri][bet.colLayBet]    = layBet;
+    }
+
+    showToast('Saved ✓');
+    const savedEl = document.getElementById('saved-' + id);
+    if (savedEl) { savedEl.style.display = 'block'; setTimeout(() => savedEl.style.display = 'none', 2000); }
+    btn.textContent = 'Save to Sheet'; btn.disabled = false;
+    await loadAllSheets();
+  } catch(e) {
+    console.error(e);
+    showToast('Save failed', true);
+    btn.textContent = 'Save to Sheet'; btn.disabled = false;
+  }
+}
+
+// ── TOAST ─────────────────────────────────────────────────────────────────────
+function showToast(msg, isError=false) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.className = 'toast show' + (isError ? ' error' : '');
+  setTimeout(() => t.className = 'toast', 3000);
+}
+
+// ── SWIPE NAVIGATION ─────────────────────────────────────────────────────────
+(function() {
+  let startX = 0, startY = 0;
+  const MIN_SWIPE = 60;  // px horizontal movement needed
+  const MAX_VERT  = 80;  // px vertical movement allowed (prevents scroll conflicts)
+
+  document.addEventListener('touchstart', e => {
+    startX = e.touches[0].clientX;
+    startY = e.touches[0].clientY;
+  }, { passive: true });
+
+  document.addEventListener('touchend', e => {
+    // Only trigger if no overlay is open
+    const overlaysOpen = ['live-overlay','upcoming-overlay'].some(id => {
+      const el = document.getElementById(id);
+      return el && el.style.display !== 'none';
+    });
+    if (overlaysOpen) return;
+
+    const dx = e.changedTouches[0].clientX - startX;
+    const dy = Math.abs(e.changedTouches[0].clientY - startY);
+    if (Math.abs(dx) < MIN_SWIPE || dy > MAX_VERT) return;
+
+    const totalTabs = SHEETS.length;
+    if (dx < 0 && currentTab < totalTabs - 1) switchTab(currentTab + 1); // swipe left → next
+    if (dx > 0 && currentTab > 0)             switchTab(currentTab - 1); // swipe right → prev
+  }, { passive: true });
+})();
+
+// ── BOOT ──────────────────────────────────────────────────────────────────────
+init();
+</script>
+</body>
+</html>
